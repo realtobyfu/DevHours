@@ -36,7 +36,12 @@ final class TimerEngine {
 
     // MARK: - Public Timer Control
 
-    func startTimer(title: String = "", client: Client? = nil, project: Project? = nil) {
+    func startTimer(
+        title: String = "",
+        client: Client? = nil,
+        project: Project? = nil,
+        sourcePlannedTask: PlannedTask? = nil
+    ) {
         guard !isRunning else { return }
 
         let entry = TimeEntry(
@@ -48,6 +53,13 @@ final class TimerEngine {
         )
 
         modelContext.insert(entry)
+
+        // Link to planned task if provided
+        if let task = sourcePlannedTask {
+            entry.sourcePlannedTask = task
+            task.linkedTimeEntries.append(entry)
+        }
+
         try? modelContext.save()
 
         runningEntry = entry
@@ -59,6 +71,13 @@ final class TimerEngine {
 
         // Mark as stopped
         entry.endTime = Date.now
+
+        // Auto-complete linked planned task only if fully worked
+        if let plannedTask = entry.sourcePlannedTask, plannedTask.isFullyWorked {
+            plannedTask.isCompleted = true
+            plannedTask.completedAt = Date.now
+        }
+
         try? modelContext.save()
 
         // Clean up

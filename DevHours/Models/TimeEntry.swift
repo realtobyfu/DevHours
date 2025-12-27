@@ -19,6 +19,10 @@ final class TimeEntry {
     var client: Client?
     var project: Project?
 
+    // Link back to the planned task that spawned this entry (if any)
+    @Relationship(inverse: \PlannedTask.linkedTimeEntries)
+    var sourcePlannedTask: PlannedTask?
+
     // Computed property for duration - always accurate
     var duration: TimeInterval {
         if let endTime = endTime {

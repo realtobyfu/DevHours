@@ -22,6 +22,10 @@ final class Project {
     @Relationship(deleteRule: .nullify, inverse: \TimeEntry.project)
     var timeEntries: [TimeEntry] = []
 
+    // Relationship: one project has many planned tasks
+    @Relationship(deleteRule: .nullify, inverse: \PlannedTask.project)
+    var plannedTasks: [PlannedTask] = []
+
     init(name: String, client: Client? = nil, isBillable: Bool = true) {
         self.id = UUID()
         self.name = name

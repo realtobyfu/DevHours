@@ -15,6 +15,8 @@ struct DevHoursApp: App {
             TimeEntry.self,
             Client.self,
             Project.self,
+            PlannedTask.self,
+            RecurrenceRule.self,
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 
@@ -28,32 +30,16 @@ struct DevHoursApp: App {
     var body: some Scene {
         WindowGroup {
             MainTabView()
+                .onAppear {
+                    initializeRecurringTasks()
+                }
         }
         .modelContainer(sharedModelContainer)
     }
-}
 
-
-/*
-public class InsertionSort {
-    public static void main (String [] args) {
-        int [] array = {45,12,85,32,89,39,69,44,42,1,6,8};
-        int temp 
-        for (int i = 1, i < array.length, i++) {
-            # 5, 4, 3, 2, 1
-            for (int j = i, j > 0, j--) {
-                while array[j] < array[j - 1] {
-                    temp = array[j];
-                    array[j] = array[j - 1];
-                    array[j - 1] = temp;
-                }
-            }
-        }
- 
-        for (int i = 0; i < array.length; i++) {
-            System.out.println(array[i])
-        }
+    private func initializeRecurringTasks() {
+        let service = RecurrenceService(modelContext: sharedModelContainer.mainContext)
+        service.generateRecurringInstances()
+        service.cleanupOldInstances()
     }
 }
-
-*/

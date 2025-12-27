@@ -9,6 +9,7 @@ import SwiftUI
 
 struct EnhancedTimerCard: View {
     let isRunning: Bool
+    let isLocked: Bool
     @Binding var titleInput: String
     let elapsedTime: TimeInterval
     let onStart: () -> Void
@@ -59,6 +60,8 @@ struct EnhancedTimerCard: View {
                                 lineWidth: 2
                             )
                     )
+                    .disabled(isLocked)
+                    .opacity(isLocked ? 0.6 : 1.0)
                     .accessibilityLabel("Timer title")
             }
 

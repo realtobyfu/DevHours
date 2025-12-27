@@ -9,6 +9,7 @@ import SwiftUI
 
 enum NavigationItem: String, CaseIterable, Identifiable {
     case today = "Today"
+    case planning = "Planning"
     case entries = "Entries"
     case settings = "Settings"
 
@@ -17,6 +18,7 @@ enum NavigationItem: String, CaseIterable, Identifiable {
     var icon: String {
         switch self {
         case .today: return "timer"
+        case .planning: return "calendar"
         case .entries: return "list.bullet"
         case .settings: return "gear"
         }
@@ -38,10 +40,12 @@ struct MainTabView: View {
             switch selection {
             case .today:
                 TodayView()
+            case .planning:
+                PlanningView()
             case .entries:
                 EntriesView()
             case .settings:
-                Text("Settings (Coming Soon)")
+                SettingsView()
             case nil:
                 Text("Select an item")
                     .foregroundStyle(.secondary)
@@ -56,12 +60,17 @@ struct MainTabView: View {
                     Label("Today", systemImage: "timer")
                 }
 
+            PlanningView()
+                .tabItem {
+                    Label("Planning", systemImage: "calendar")
+                }
+
             EntriesView()
                 .tabItem {
                     Label("Entries", systemImage: "list.bullet")
                 }
 
-            Text("Settings (Coming Soon)")
+            SettingsView()
                 .tabItem {
                     Label("Settings", systemImage: "gear")
                 }
