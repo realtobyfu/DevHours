@@ -87,6 +87,8 @@ struct EnhancedTimerCard: View {
                 .fill(Color.systemBackground)
                 .shadow(color: Color.black.opacity(0.05), radius: 10, y: 5)
         )
+        .frame(maxWidth: 500)
+        .frame(maxWidth: .infinity, alignment: .center)
         .animation(.spring(response: 0.4, dampingFraction: 0.8), value: isRunning)
     }
 
