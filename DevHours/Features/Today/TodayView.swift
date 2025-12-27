@@ -30,52 +30,73 @@ struct TodayView: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(spacing: 20) {
-                    // Daily Summary (only show if there are entries)
-                    if !todayEntries.isEmpty {
-                        DailySummaryHeader(
-                            totalDuration: totalDurationToday,
-                            entryCount: todayEntries.count
-                        )
-                        .padding(.horizontal, 16)
-                    }
-
-                    // Enhanced Timer Control Card
-                    EnhancedTimerCard(
-                        isRunning: timerEngine?.isRunning ?? false,
-                        titleInput: $titleInput,
-                        elapsedTime: timerEngine?.elapsedTime ?? 0,
-                        onStart: startTimer,
-                        onStop: stopTimer
+            List {
+                // Daily Summary Section
+                if !todayEntries.isEmpty {
+                    DailySummaryHeader(
+                        totalDuration: totalDurationToday,
+                        entryCount: todayEntries.count
                     )
-                    .padding(.horizontal, 16)
-
-                    // Today's Entries Section
-                    VStack(alignment: .leading, spacing: 12) {
-                        if !todayEntries.isEmpty {
-                            Text("Today's Entries")
-                                .font(.title3)
-                                .fontWeight(.semibold)
-                                .padding(.horizontal, 16)
-
-                            LazyVStack(spacing: 12) {
-                                ForEach(todayEntries) { entry in
-                                    TodayEntryRow(entry: entry)
-                                        .padding(.horizontal, 16)
-                                }
-                            }
-                        } else if timerEngine?.isRunning == false {
-                            EmptyTodayState()
-                        }
-                    }
-                    .padding(.bottom, 20)
+                    .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
                 }
-                .padding(.top, 8)
+
+                // Timer Control Section
+                EnhancedTimerCard(
+                    isRunning: timerEngine?.isRunning ?? false,
+                    titleInput: $titleInput,
+                    elapsedTime: timerEngine?.elapsedTime ?? 0,
+                    onStart: startTimer,
+                    onStop: stopTimer
+                )
+                .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
+
+                // Today's Entries Section
+                if !todayEntries.isEmpty {
+                    Section {
+                        ForEach(todayEntries) { entry in
+                            TodayEntryRow(entry: entry)
+                                .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
+                                .listRowBackground(Color.clear)
+                                .listRowSeparator(.hidden)
+                                .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                                    Button(role: .destructive) {
+                                        deleteEntry(entry)
+                                    } label: {
+                                        Label("Delete", systemImage: "trash")
+                                    }
+                                }
+                                .contextMenu {
+                                    Button(role: .destructive) {
+                                        deleteEntry(entry)
+                                    } label: {
+                                        Label("Delete", systemImage: "trash")
+                                    }
+                                }
+                        }
+                    } header: {
+                        Text("Today's Entries")
+                            .font(.title3)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.primary)
+                            .textCase(nil)
+                    }
+                } else if timerEngine?.isRunning == false {
+                    EmptyTodayState()
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
+                }
             }
-            .background(Color(.secondarySystemBackground))
+            .listStyle(.plain)
+            .scrollContentBackground(.hidden)
+            .background(Color.secondarySystemBackground)
             .navigationTitle("Today")
+            #if os(iOS)
             .navigationBarTitleDisplayMode(.large)
+            #endif
         }
         .onAppear {
             if timerEngine == nil {
@@ -96,5 +117,9 @@ struct TodayView: View {
     private func stopTimer() {
         timerEngine?.stopTimer()
         titleInput = ""  // Clear after stopping
+    }
+
+    private func deleteEntry(_ entry: TimeEntry) {
+        modelContext.delete(entry)
     }
 }

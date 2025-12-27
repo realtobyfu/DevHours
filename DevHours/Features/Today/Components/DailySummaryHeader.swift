@@ -48,7 +48,7 @@ struct DailySummaryHeader: View {
         .padding(16)
         .background(
             RoundedRectangle(cornerRadius: 12)
-                .fill(Color(.secondarySystemBackground))
+                .fill(Color.secondarySystemBackground)
         )
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Total today: \(DurationFormatter.formatAccessible(totalDuration)), \(entryCount) \(entryCount == 1 ? "entry" : "entries")")

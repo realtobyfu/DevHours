@@ -50,7 +50,7 @@ struct EnhancedTimerCard: View {
                     .padding(16)
                     .background(
                         RoundedRectangle(cornerRadius: 12)
-                            .fill(Color(.systemGray6))
+                            .fill(Color.systemGray6)
                     )
                     .overlay(
                         RoundedRectangle(cornerRadius: 12)
@@ -84,7 +84,7 @@ struct EnhancedTimerCard: View {
         .padding(20)
         .background(
             RoundedRectangle(cornerRadius: 20)
-                .fill(Color(.systemBackground))
+                .fill(Color.systemBackground)
                 .shadow(color: Color.black.opacity(0.05), radius: 10, y: 5)
         )
         .animation(.spring(response: 0.4, dampingFraction: 0.8), value: isRunning)

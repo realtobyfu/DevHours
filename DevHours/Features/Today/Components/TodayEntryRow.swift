@@ -68,7 +68,7 @@ struct TodayEntryRow: View {
                 .padding(.vertical, 4)
                 .background(
                     Capsule()
-                        .fill(Color(.tertiarySystemBackground))
+                        .fill(Color.tertiarySystemBackground)
                 )
                 .foregroundStyle(.secondary)
             }
@@ -76,11 +76,11 @@ struct TodayEntryRow: View {
         .padding(16)
         .background(
             RoundedRectangle(cornerRadius: 12)
-                .fill(Color(.systemBackground))
+                .fill(Color.systemBackground)
         )
         .overlay(
             RoundedRectangle(cornerRadius: 12)
-                .strokeBorder(Color(.separator).opacity(0.5), lineWidth: 0.5)
+                .strokeBorder(Color.separatorColor.opacity(0.5), lineWidth: 0.5)
         )
         .accessibilityElement(children: .combine)
     }

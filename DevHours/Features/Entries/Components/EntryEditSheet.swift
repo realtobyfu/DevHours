@@ -8,7 +8,7 @@
 import SwiftUI
 import SwiftData
 
-struct EntryEditSheet: View {
+struct EntryEditScheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
 
@@ -153,7 +153,9 @@ struct EntryEditSheet: View {
                 }
             }
             .navigationTitle("Edit Entry")
+            #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") {
