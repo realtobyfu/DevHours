@@ -7,12 +7,14 @@
 
 import Foundation
 import SwiftData
+import WidgetKit
 
 @MainActor
 final class SharedDataManager {
     static let shared = SharedDataManager()
 
     static let appGroupIdentifier = "group.com.tobiasfu.DevHours"
+    private static let widgetDataFileName = "widget-tasks.json"
 
     lazy var sharedModelContainer: ModelContainer = {
         let schema = Schema([
@@ -79,5 +81,50 @@ final class SharedDataManager {
         let descriptor = FetchDescriptor<TimeEntry>(sortBy: [SortDescriptor(\.startTime)])
         let all = (try? modelContext.fetch(descriptor)) ?? []
         return all.filter { $0.isToday }.reduce(0) { $0 + $1.duration }
+    }
+
+    // MARK: - Widget Data Sync
+    /// Updates the widget data file with today's planned tasks and timer state
+    func updateWidgetData() {
+        let tasks = todayPlannedTasks()
+        let runningTimer = currentTimer()
+
+        let widgetTasks = tasks.map { task in
+            WidgetTaskData(
+                id: task.id,
+                title: task.title,
+                estimatedDuration: task.estimatedDuration,
+                isCompleted: task.isCompleted
+            )
+        }
+
+        let widgetTimer = WidgetTimerData(
+            isRunning: runningTimer != nil,
+            title: runningTimer?.title,
+            startTime: runningTimer?.startTime
+        )
+
+        let widgetData = WidgetData(
+            tasks: widgetTasks,
+            timer: widgetTimer,
+            lastUpdated: Date()
+        )
+
+        guard let containerURL = FileManager.default.containerURL(
+            forSecurityApplicationGroupIdentifier: Self.appGroupIdentifier
+        ) else {
+            print("SharedDataManager: Failed to get app group container")
+            return
+        }
+
+        let fileURL = containerURL.appendingPathComponent(Self.widgetDataFileName)
+
+        do {
+            let data = try JSONEncoder().encode(widgetData)
+            try data.write(to: fileURL)
+            WidgetCenter.shared.reloadAllTimelines()
+        } catch {
+            print("SharedDataManager: Failed to write widget data - \(error)")
+        }
     }
 }

@@ -183,6 +183,7 @@ struct PlannedTaskEditSheet: View {
 
         do {
             try modelContext.save()
+            SharedDataManager.shared.updateWidgetData()
         } catch {
             print("Error saving planned task: \(error)")
         }
@@ -200,6 +201,7 @@ struct PlannedTaskEditSheet: View {
 
             do {
                 try modelContext.save()
+                SharedDataManager.shared.updateWidgetData()
             } catch {
                 print("Error deleting planned task: \(error)")
             }

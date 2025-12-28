@@ -22,7 +22,7 @@ struct StartTimerIntent: AppIntent {
     @MainActor
     func perform() async throws -> some IntentResult {
         SharedDataManager.shared.startTimer(title: title ?? "")
-        WidgetCenter.shared.reloadAllTimelines()
+        SharedDataManager.shared.updateWidgetData()
         return .result()
     }
 }
@@ -38,7 +38,7 @@ struct StopTimerIntent: AppIntent {
     @MainActor
     func perform() async throws -> some IntentResult {
         SharedDataManager.shared.stopTimer()
-        WidgetCenter.shared.reloadAllTimelines()
+        SharedDataManager.shared.updateWidgetData()
         return .result()
     }
 }
@@ -58,7 +58,7 @@ struct ToggleTimerIntent: AppIntent {
         } else {
             manager.startTimer(title: "")
         }
-        WidgetCenter.shared.reloadAllTimelines()
+        manager.updateWidgetData()
         return .result()
     }
 }

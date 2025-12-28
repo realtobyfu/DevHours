@@ -11,6 +11,8 @@ import SwiftUI
 @main
 struct DevHoursWidgetsBundle: WidgetBundle {
     var body: some Widget {
-        DevHoursWidgets()
+        TodayTasksWidget()
+        TimerWidget()
+        TimerLiveActivity()
     }
 }

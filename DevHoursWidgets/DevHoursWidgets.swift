@@ -2,87 +2,354 @@
 //  DevHoursWidgets.swift
 //  DevHoursWidgets
 //
-//  Created by Tobias on 12/27/25.
+//  Widget displaying today's planned tasks.
 //
 
 import WidgetKit
 import SwiftUI
 
-struct Provider: AppIntentTimelineProvider {
-    func placeholder(in context: Context) -> SimpleEntry {
-        SimpleEntry(date: Date(), configuration: ConfigurationAppIntent())
+
+// MARK: - Timeline Entry
+
+struct TasksEntry: TimelineEntry {
+    let date: Date
+    let tasks: [WidgetTaskData]
+
+    static var placeholder: TasksEntry {
+        TasksEntry(date: .now, tasks: [
+            WidgetTaskData(id: UUID(), title: "Design review", estimatedDuration: 3600, isCompleted: false),
+            WidgetTaskData(id: UUID(), title: "Code cleanup", estimatedDuration: 1800, isCompleted: false),
+            WidgetTaskData(id: UUID(), title: "Write docs", estimatedDuration: 2700, isCompleted: false)
+        ])
     }
 
-    func snapshot(for configuration: ConfigurationAppIntent, in context: Context) async -> SimpleEntry {
-        SimpleEntry(date: Date(), configuration: configuration)
+    static var empty: TasksEntry {
+        TasksEntry(date: .now, tasks: [])
     }
-    
-    func timeline(for configuration: ConfigurationAppIntent, in context: Context) async -> Timeline<SimpleEntry> {
-        var entries: [SimpleEntry] = []
+}
 
-        // Generate a timeline consisting of five entries an hour apart, starting from the current date.
-        let currentDate = Date()
-        for hourOffset in 0 ..< 5 {
-            let entryDate = Calendar.current.date(byAdding: .hour, value: hourOffset, to: currentDate)!
-            let entry = SimpleEntry(date: entryDate, configuration: configuration)
-            entries.append(entry)
+// MARK: - Timeline Provider
+
+struct TasksTimelineProvider: TimelineProvider {
+    private static let appGroupIdentifier = "group.com.tobiasfu.DevHours"
+    private static let widgetDataFileName = "widget-tasks.json"
+
+    func placeholder(in context: Context) -> TasksEntry {
+        TasksEntry.placeholder
+    }
+
+    func getSnapshot(in context: Context, completion: @escaping (TasksEntry) -> Void) {
+        if context.isPreview {
+            completion(TasksEntry.placeholder)
+        } else {
+            let tasks = loadTasks()
+            completion(TasksEntry(date: .now, tasks: tasks))
+        }
+    }
+
+    func getTimeline(in context: Context, completion: @escaping (Timeline<TasksEntry>) -> Void) {
+        let tasks = loadTasks()
+        let entry = TasksEntry(date: .now, tasks: tasks)
+
+        // Refresh every 15 minutes or at midnight
+        let midnight = Calendar.current.startOfDay(for: Date().addingTimeInterval(86400))
+        let fifteenMinutes = Date().addingTimeInterval(15 * 60)
+        let nextRefresh = min(midnight, fifteenMinutes)
+
+        let timeline = Timeline(entries: [entry], policy: .after(nextRefresh))
+        completion(timeline)
+    }
+
+    private func loadTasks() -> [WidgetTaskData] {
+        guard let containerURL = FileManager.default.containerURL(
+            forSecurityApplicationGroupIdentifier: Self.appGroupIdentifier
+        ) else {
+            print("Widget: Failed to get app group container")
+            return []
         }
 
-        return Timeline(entries: entries, policy: .atEnd)
+        let fileURL = containerURL.appendingPathComponent(Self.widgetDataFileName)
+
+        guard FileManager.default.fileExists(atPath: fileURL.path) else {
+            print("Widget: No widget data file found")
+            return []
+        }
+
+        do {
+            let data = try Data(contentsOf: fileURL)
+            let widgetData = try JSONDecoder().decode(WidgetData.self, from: data)
+            return widgetData.tasks
+        } catch {
+            print("Widget: Failed to load tasks - \(error)")
+            return []
+        }
     }
-
-//    func relevances() async -> WidgetRelevances<ConfigurationAppIntent> {
-//        // Generate a list containing the contexts this widget is relevant in.
-//    }
 }
 
-struct SimpleEntry: TimelineEntry {
-    let date: Date
-    let configuration: ConfigurationAppIntent
-}
+// MARK: - Widget Views
 
-struct DevHoursWidgetsEntryView : View {
-    var entry: Provider.Entry
+struct TodayTasksWidgetEntryView: View {
+    @Environment(\.widgetFamily) var widgetFamily
+    var entry: TasksEntry
 
     var body: some View {
-        VStack {
-            Text("Time:")
-            Text(entry.date, style: .time)
-
-            Text("Favorite Emoji:")
-            Text(entry.configuration.favoriteEmoji)
+        switch widgetFamily {
+        case .systemSmall:
+            SmallWidgetView(entry: entry)
+        case .systemMedium:
+            MediumWidgetView(entry: entry)
+        case .systemLarge:
+            LargeWidgetView(entry: entry)
+        default:
+            MediumWidgetView(entry: entry)
         }
     }
 }
 
-struct DevHoursWidgets: Widget {
-    let kind: String = "DevHoursWidgets"
+// MARK: - Small Widget
+
+struct SmallWidgetView: View {
+    let entry: TasksEntry
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Image(systemName: "checklist")
+                    .font(.headline)
+                    .foregroundStyle(.blue)
+                Text("Today")
+                    .font(.headline)
+                    .fontWeight(.semibold)
+                Spacer()
+            }
+
+            if entry.tasks.isEmpty {
+                Spacer()
+                Text("No tasks")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                Spacer()
+            } else {
+                ForEach(entry.tasks.prefix(2)) { task in
+                    TaskRowCompact(task: task)
+                }
+
+                Spacer(minLength: 0)
+
+                if entry.tasks.count > 2 {
+                    Text("+\(entry.tasks.count - 2) more")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+    }
+}
+
+// MARK: - Medium Widget
+
+struct MediumWidgetView: View {
+    let entry: TasksEntry
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                Image(systemName: "checklist")
+                    .font(.headline)
+                    .foregroundStyle(.blue)
+                Text("Today's Tasks")
+                    .font(.headline)
+                    .fontWeight(.semibold)
+                Spacer()
+                if !entry.tasks.isEmpty {
+                    Text("\(entry.tasks.count)")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            if entry.tasks.isEmpty {
+                Spacer()
+                HStack {
+                    Spacer()
+                    VStack(spacing: 4) {
+                        Image(systemName: "checkmark.circle")
+                            .font(.title2)
+                            .foregroundStyle(.green)
+                        Text("All done!")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                }
+                Spacer()
+            } else {
+                ForEach(entry.tasks.prefix(3)) { task in
+                    TaskRow(task: task)
+                }
+
+                Spacer(minLength: 0)
+
+                if entry.tasks.count > 3 {
+                    Text("+\(entry.tasks.count - 3) more tasks")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+    }
+}
+
+// MARK: - Large Widget
+
+struct LargeWidgetView: View {
+    let entry: TasksEntry
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Image(systemName: "checklist")
+                    .font(.title3)
+                    .foregroundStyle(.blue)
+                Text("Today's Tasks")
+                    .font(.title3)
+                    .fontWeight(.semibold)
+                Spacer()
+                if !entry.tasks.isEmpty {
+                    Text("\(entry.tasks.count) tasks")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .padding(.bottom, 4)
+
+            if entry.tasks.isEmpty {
+                Spacer()
+                HStack {
+                    Spacer()
+                    VStack(spacing: 8) {
+                        Image(systemName: "checkmark.circle")
+                            .font(.largeTitle)
+                            .foregroundStyle(.green)
+                        Text("All done for today!")
+                            .font(.headline)
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                }
+                Spacer()
+            } else {
+                ForEach(entry.tasks.prefix(6)) { task in
+                    TaskRow(task: task)
+                }
+
+                Spacer(minLength: 0)
+
+                if entry.tasks.count > 6 {
+                    Text("+\(entry.tasks.count - 6) more tasks")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+    }
+}
+
+// MARK: - Task Row Components
+
+struct TaskRow: View {
+    let task: WidgetTaskData
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Image(systemName: task.isCompleted ? "checkmark.circle.fill" : "circle")
+                .font(.body)
+                .foregroundStyle(task.isCompleted ? .green : .secondary)
+
+            Text(task.title.isEmpty ? "Untitled" : task.title)
+                .font(.subheadline)
+                .lineLimit(1)
+                .strikethrough(task.isCompleted)
+                .foregroundStyle(task.isCompleted ? .secondary : .primary)
+
+            Spacer(minLength: 4)
+
+            HStack(spacing: 3) {
+                Image(systemName: "clock")
+                    .font(.caption2)
+                Text(DurationFormatter.formatHoursMinutes(task.estimatedDuration))
+                    .font(.caption)
+            }
+            .foregroundStyle(.secondary)
+        }
+    }
+}
+
+struct TaskRowCompact: View {
+    let task: WidgetTaskData
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Image(systemName: task.isCompleted ? "checkmark.circle.fill" : "circle")
+                .font(.caption)
+                .foregroundStyle(task.isCompleted ? .green : .secondary)
+
+            Text(task.title.isEmpty ? "Untitled" : task.title)
+                .font(.caption)
+                .lineLimit(1)
+                .strikethrough(task.isCompleted)
+                .foregroundStyle(task.isCompleted ? .secondary : .primary)
+
+            Spacer(minLength: 2)
+
+            Text(DurationFormatter.formatHoursMinutes(task.estimatedDuration))
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+        }
+    }
+}
+
+// MARK: - Widget Definition
+
+struct TodayTasksWidget: Widget {
+    let kind: String = "TodayTasksWidget"
 
     var body: some WidgetConfiguration {
-        AppIntentConfiguration(kind: kind, intent: ConfigurationAppIntent.self, provider: Provider()) { entry in
-            DevHoursWidgetsEntryView(entry: entry)
+        StaticConfiguration(kind: kind, provider: TasksTimelineProvider()) { entry in
+            TodayTasksWidgetEntryView(entry: entry)
                 .containerBackground(.fill.tertiary, for: .widget)
         }
+        .configurationDisplayName("Today's Tasks")
+        .description("See your planned tasks for today.")
+        .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
     }
 }
 
-extension ConfigurationAppIntent {
-    fileprivate static var smiley: ConfigurationAppIntent {
-        let intent = ConfigurationAppIntent()
-        intent.favoriteEmoji = "😀"
-        return intent
-    }
-    
-    fileprivate static var starEyes: ConfigurationAppIntent {
-        let intent = ConfigurationAppIntent()
-        intent.favoriteEmoji = "🤩"
-        return intent
-    }
-}
+// MARK: - Previews
 
-#Preview(as: .systemSmall) {
-    DevHoursWidgets()
+#Preview("Small", as: .systemSmall) {
+    TodayTasksWidget()
 } timeline: {
-    SimpleEntry(date: .now, configuration: .smiley)
-    SimpleEntry(date: .now, configuration: .starEyes)
+    TasksEntry.placeholder
+}
+
+#Preview("Medium", as: .systemMedium) {
+    TodayTasksWidget()
+} timeline: {
+    TasksEntry.placeholder
+}
+
+#Preview("Large", as: .systemLarge) {
+    TodayTasksWidget()
+} timeline: {
+    TasksEntry.placeholder
+}
+
+#Preview("Empty", as: .systemMedium) {
+    TodayTasksWidget()
+} timeline: {
+    TasksEntry.empty
 }

@@ -46,6 +46,18 @@
 		3EEC6C442EEE6BE400CC7494 /* CLAUDE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = CLAUDE.md; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		3EAF57462F00F16D00EA8A10 /* Exceptions for "DevHours" folder in "DevHoursWidgetsExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Shared/Entities.swift,
+				SharedUI/CrossPlatformColors.swift,
+				SharedUI/FormatHelpers.swift,
+			);
+			target = 3EC0739B2F00AA5500316BD9 /* DevHoursWidgetsExtension */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		3EC073A22F00AA5500316BD9 /* DevHoursWidgets */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
@@ -54,6 +66,9 @@
 		};
 		3EEC6C362EEE6BA800CC7494 /* DevHours */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				3EAF57462F00F16D00EA8A10 /* Exceptions for "DevHours" folder in "DevHoursWidgetsExtension" target */,
+			);
 			path = DevHours;
 			sourceTree = "<group>";
 		};
@@ -250,7 +265,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 679K683SQ5;
 				GENERATE_INFOPLIST_FILE = NO;
-				INFOPLIST_FILE = DevHoursWidgetsExtension-Info.plist;
+				INFOPLIST_FILE = "DevHoursWidgetsExtension-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = DevHoursWidgets;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
@@ -282,7 +297,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 679K683SQ5;
 				GENERATE_INFOPLIST_FILE = NO;
-				INFOPLIST_FILE = DevHoursWidgetsExtension-Info.plist;
+				INFOPLIST_FILE = "DevHoursWidgetsExtension-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = DevHoursWidgets;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
@@ -438,12 +453,8 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
 				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
-				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "DevHours-Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -479,12 +490,8 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
 				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
-				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "DevHours-Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",

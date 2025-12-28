@@ -8,6 +8,7 @@
 import Foundation
 import SwiftData
 import Observation
+import ActivityKit
 
 @Observable
 final class TimerEngine {
@@ -20,6 +21,7 @@ final class TimerEngine {
 
     private var timer: Timer?
     private let modelContext: ModelContext
+    private var currentActivity: Activity<TimerActivityAttributes>?
 
     // MARK: - Computed Properties
 
@@ -64,6 +66,12 @@ final class TimerEngine {
 
         runningEntry = entry
         startTickTimer()
+
+        // Start Live Activity
+        startLiveActivity(title: title, projectName: project?.name, startTime: entry.startTime)
+
+        // Sync widget data
+        SharedDataManager.shared.updateWidgetData()
     }
 
     func stopTimer() {
@@ -79,6 +87,12 @@ final class TimerEngine {
         }
 
         try? modelContext.save()
+
+        // End Live Activity
+        endLiveActivity()
+
+        // Sync widget data
+        SharedDataManager.shared.updateWidgetData()
 
         // Clean up
         stopTickTimer()
@@ -109,6 +123,9 @@ final class TimerEngine {
         // Restore the running timer
         runningEntry = entry
         startTickTimer()
+
+        // Restore Live Activity if needed
+        restoreLiveActivityIfNeeded()
     }
 
     private func startTickTimer() {
@@ -130,5 +147,85 @@ final class TimerEngine {
             return
         }
         elapsedTime = entry.duration
+    }
+
+    // MARK: - Live Activity
+    private func startLiveActivity(title: String, projectName: String?, startTime: Date) {
+        guard ActivityAuthorizationInfo().areActivitiesEnabled else {
+            print("TimerEngine: Live Activities not enabled")
+            return
+        }
+
+        let attributes = TimerActivityAttributes(
+            taskTitle: title,
+            projectName: projectName
+        )
+
+        let initialState = TimerActivityAttributes.ContentState(
+            startTime: startTime,
+            isRunning: true
+        )
+
+        let content = ActivityContent(
+            state: initialState,
+            staleDate: Date.distantFuture // Timer style auto-updates
+        )
+
+        do {
+            currentActivity = try Activity.request(
+                attributes: attributes,
+                content: content,
+                pushType: nil
+            )
+            print("TimerEngine: Started Live Activity")
+        } catch {
+            print("TimerEngine: Failed to start Live Activity - \(error)")
+        }
+    }
+
+    private func endLiveActivity() {
+        guard let activity = currentActivity else {
+            // Try to end any orphaned activities
+            Task {
+                for activity in Activity<TimerActivityAttributes>.activities {
+                    await activity.end(nil, dismissalPolicy: .immediate)
+                }
+            }
+            return
+        }
+
+        let finalState = TimerActivityAttributes.ContentState(
+            startTime: activity.content.state.startTime,
+            isRunning: false
+        )
+
+        Task {
+            await activity.end(
+                ActivityContent(state: finalState, staleDate: nil),
+                dismissalPolicy: .immediate
+            )
+            print("TimerEngine: Ended Live Activity")
+        }
+
+        currentActivity = nil
+    }
+
+    /// Restores Live Activity if timer was running when app was killed
+    private func restoreLiveActivityIfNeeded() {
+        guard let entry = runningEntry else { return }
+
+        // Check if there's already an active Live Activity
+        let existingActivities = Activity<TimerActivityAttributes>.activities
+        if !existingActivities.isEmpty {
+            currentActivity = existingActivities.first
+            return
+        }
+
+        // No existing activity, start a new one
+        startLiveActivity(
+            title: entry.title,
+            projectName: entry.project?.name,
+            startTime: entry.startTime
+        )
     }
 }

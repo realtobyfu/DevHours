@@ -17,7 +17,7 @@ struct DevHoursShortcuts: AppShortcutsProvider {
                 "Start tracking time with \(.applicationName)",
                 "Begin timer in \(.applicationName)"
             ],
-            shortTitle: "Start Timer",
+            shortTitle: LocalizedStringResource("Start Timer"),
             systemImageName: "play.fill"
         )
         AppShortcut(
@@ -27,7 +27,7 @@ struct DevHoursShortcuts: AppShortcutsProvider {
                 "Stop tracking time with \(.applicationName)",
                 "End timer in \(.applicationName)"
             ],
-            shortTitle: "Stop Timer",
+            shortTitle: LocalizedStringResource("Stop Timer"),
             systemImageName: "stop.fill"
         )
     }
