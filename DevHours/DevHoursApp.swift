@@ -10,23 +10,6 @@ import SwiftData
 
 @main
 struct DevHoursApp: App {
-    var sharedModelContainer: ModelContainer = {
-        let schema = Schema([
-            TimeEntry.self,
-            Client.self,
-            Project.self,
-            PlannedTask.self,
-            RecurrenceRule.self,
-        ])
-        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
-
-        do {
-            return try ModelContainer(for: schema, configurations: [modelConfiguration])
-        } catch {
-            fatalError("Could not create ModelContainer: \(error)")
-        }
-    }()
-
     var body: some Scene {
         WindowGroup {
             MainTabView()
@@ -34,11 +17,12 @@ struct DevHoursApp: App {
                     initializeRecurringTasks()
                 }
         }
-        .modelContainer(sharedModelContainer)
+        .modelContainer(SharedDataManager.shared.sharedModelContainer)
     }
 
+    @MainActor
     private func initializeRecurringTasks() {
-        let service = RecurrenceService(modelContext: sharedModelContainer.mainContext)
+        let service = RecurrenceService(modelContext: SharedDataManager.shared.modelContext)
         service.generateRecurringInstances()
         service.cleanupOldInstances()
     }
