@@ -23,6 +23,10 @@ final class TimeEntry {
     @Relationship(inverse: \PlannedTask.linkedTimeEntries)
     var sourcePlannedTask: PlannedTask?
 
+    // Tags for categorization (many-to-many)
+    @Relationship(deleteRule: .nullify, inverse: \Tag.timeEntries)
+    var tags: [Tag] = []
+
     // Computed property for duration - always accurate
     var duration: TimeInterval {
         if let endTime = endTime {

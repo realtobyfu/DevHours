@@ -72,6 +72,11 @@ struct TodayEntryRow: View {
                 )
                 .foregroundStyle(.secondary)
             }
+
+            // Tags (if any) - compact style for today view
+            if !entry.tags.isEmpty {
+                TagsFlowView(tags: entry.tags, compact: true)
+            }
         }
         .padding(16)
         .background(

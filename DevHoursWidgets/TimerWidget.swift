@@ -15,6 +15,7 @@ struct TimerEntry: TimelineEntry {
     let isRunning: Bool
     let title: String
     let startTime: Date?
+    let relevance: TimelineEntryRelevance?
 
     var elapsedTime: TimeInterval {
         guard let startTime else { return 0 }
@@ -26,7 +27,8 @@ struct TimerEntry: TimelineEntry {
             date: .now,
             isRunning: true,
             title: "Working on task",
-            startTime: Date().addingTimeInterval(-3723) // 1h 2m 3s ago
+            startTime: Date().addingTimeInterval(-3723), // 1h 2m 3s ago
+            relevance: TimelineEntryRelevance(score: 1.0)
         )
     }
 
@@ -35,7 +37,8 @@ struct TimerEntry: TimelineEntry {
             date: .now,
             isRunning: false,
             title: "",
-            startTime: nil
+            startTime: nil,
+            relevance: TimelineEntryRelevance(score: 0.2)
         )
     }
 }
@@ -64,8 +67,10 @@ struct TimerTimelineProvider: TimelineProvider {
 
         if timerData.isRunning, let startTime = timerData.startTime {
             // Timer is running - create entries for the next hour (one per minute)
+            // High relevance for Smart Stack when timer is active
             var entries: [TimerEntry] = []
             let now = Date()
+            let runningRelevance = TimelineEntryRelevance(score: 1.0)
 
             for minuteOffset in 0..<60 {
                 let entryDate = now.addingTimeInterval(Double(minuteOffset) * 60)
@@ -73,7 +78,8 @@ struct TimerTimelineProvider: TimelineProvider {
                     date: entryDate,
                     isRunning: true,
                     title: timerData.title ?? "",
-                    startTime: startTime
+                    startTime: startTime,
+                    relevance: runningRelevance
                 ))
             }
 
@@ -81,6 +87,7 @@ struct TimerTimelineProvider: TimelineProvider {
             completion(timeline)
         } else {
             // No timer running - single entry, refresh when data changes
+            // Low relevance for Smart Stack when idle
             let entry = TimerEntry.notRunning
             let timeline = Timeline(entries: [entry], policy: .never)
             completion(timeline)
@@ -89,11 +96,15 @@ struct TimerTimelineProvider: TimelineProvider {
 
     private func loadTimerEntry() -> TimerEntry {
         let timerData = loadTimerData()
+        let relevance = timerData.isRunning
+            ? TimelineEntryRelevance(score: 1.0)
+            : TimelineEntryRelevance(score: 0.2)
         return TimerEntry(
             date: .now,
             isRunning: timerData.isRunning,
             title: timerData.title ?? "",
-            startTime: timerData.startTime
+            startTime: timerData.startTime,
+            relevance: relevance
         )
     }
 

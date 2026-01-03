@@ -14,17 +14,18 @@ import SwiftUI
 struct TasksEntry: TimelineEntry {
     let date: Date
     let tasks: [WidgetTaskData]
+    let relevance: TimelineEntryRelevance?
 
     static var placeholder: TasksEntry {
         TasksEntry(date: .now, tasks: [
             WidgetTaskData(id: UUID(), title: "Design review", estimatedDuration: 3600, isCompleted: false),
             WidgetTaskData(id: UUID(), title: "Code cleanup", estimatedDuration: 1800, isCompleted: false),
             WidgetTaskData(id: UUID(), title: "Write docs", estimatedDuration: 2700, isCompleted: false)
-        ])
+        ], relevance: TimelineEntryRelevance(score: 1.0))
     }
 
     static var empty: TasksEntry {
-        TasksEntry(date: .now, tasks: [])
+        TasksEntry(date: .now, tasks: [], relevance: TimelineEntryRelevance(score: 0.1))
     }
 }
 
@@ -43,13 +44,15 @@ struct TasksTimelineProvider: TimelineProvider {
             completion(TasksEntry.placeholder)
         } else {
             let tasks = loadTasks()
-            completion(TasksEntry(date: .now, tasks: tasks))
+            let relevance = calculateRelevance(for: tasks)
+            completion(TasksEntry(date: .now, tasks: tasks, relevance: relevance))
         }
     }
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<TasksEntry>) -> Void) {
         let tasks = loadTasks()
-        let entry = TasksEntry(date: .now, tasks: tasks)
+        let relevance = calculateRelevance(for: tasks)
+        let entry = TasksEntry(date: .now, tasks: tasks, relevance: relevance)
 
         // Refresh every 15 minutes or at midnight
         let midnight = Calendar.current.startOfDay(for: Date().addingTimeInterval(86400))
@@ -58,6 +61,23 @@ struct TasksTimelineProvider: TimelineProvider {
 
         let timeline = Timeline(entries: [entry], policy: .after(nextRefresh))
         completion(timeline)
+    }
+
+    /// Calculate Smart Stack relevance based on task state
+    private func calculateRelevance(for tasks: [WidgetTaskData]) -> TimelineEntryRelevance {
+        if tasks.isEmpty {
+            // No tasks - low relevance
+            return TimelineEntryRelevance(score: 0.1)
+        }
+
+        let hasIncompleteTasks = tasks.contains { !$0.isCompleted }
+        if hasIncompleteTasks {
+            // Has work to do - high relevance
+            return TimelineEntryRelevance(score: 1.0)
+        } else {
+            // All done - moderate relevance
+            return TimelineEntryRelevance(score: 0.3)
+        }
     }
 
     private func loadTasks() -> [WidgetTaskData] {
@@ -98,8 +118,6 @@ struct TodayTasksWidgetEntryView: View {
             SmallWidgetView(entry: entry)
         case .systemMedium:
             MediumWidgetView(entry: entry)
-        case .systemLarge:
-            LargeWidgetView(entry: entry)
         default:
             MediumWidgetView(entry: entry)
         }
@@ -202,62 +220,6 @@ struct MediumWidgetView: View {
     }
 }
 
-// MARK: - Large Widget
-
-struct LargeWidgetView: View {
-    let entry: TasksEntry
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Image(systemName: "checklist")
-                    .font(.title3)
-                    .foregroundStyle(.blue)
-                Text("Today's Tasks")
-                    .font(.title3)
-                    .fontWeight(.semibold)
-                Spacer()
-                if !entry.tasks.isEmpty {
-                    Text("\(entry.tasks.count) tasks")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
-            }
-            .padding(.bottom, 4)
-
-            if entry.tasks.isEmpty {
-                Spacer()
-                HStack {
-                    Spacer()
-                    VStack(spacing: 8) {
-                        Image(systemName: "checkmark.circle")
-                            .font(.largeTitle)
-                            .foregroundStyle(.green)
-                        Text("All done for today!")
-                            .font(.headline)
-                            .foregroundStyle(.secondary)
-                    }
-                    Spacer()
-                }
-                Spacer()
-            } else {
-                ForEach(entry.tasks.prefix(6)) { task in
-                    TaskRow(task: task)
-                }
-
-                Spacer(minLength: 0)
-
-                if entry.tasks.count > 6 {
-                    Text("+\(entry.tasks.count - 6) more tasks")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            }
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-    }
-}
-
 // MARK: - Task Row Components
 
 struct TaskRow: View {
@@ -324,7 +286,7 @@ struct TodayTasksWidget: Widget {
         }
         .configurationDisplayName("Today's Tasks")
         .description("See your planned tasks for today.")
-        .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
+        .supportedFamilies([.systemSmall, .systemMedium])
     }
 }
 
@@ -337,12 +299,6 @@ struct TodayTasksWidget: Widget {
 }
 
 #Preview("Medium", as: .systemMedium) {
-    TodayTasksWidget()
-} timeline: {
-    TasksEntry.placeholder
-}
-
-#Preview("Large", as: .systemLarge) {
     TodayTasksWidget()
 } timeline: {
     TasksEntry.placeholder

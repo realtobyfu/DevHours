@@ -81,6 +81,11 @@ struct EntryRow: View {
                 )
                 .foregroundStyle(.secondary)
             }
+
+            // Tags (if any)
+            if !entry.tags.isEmpty {
+                TagsFlowView(tags: entry.tags)
+            }
         }
         .padding(16)
         .background(

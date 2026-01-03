@@ -17,6 +17,12 @@ struct SettingsView: View {
                     } label: {
                         Label("Manage Projects", systemImage: "folder")
                     }
+
+                    NavigationLink {
+                        TagsListView()
+                    } label: {
+                        Label("Manage Tags", systemImage: "tag")
+                    }
                 }
 
                 Section("About") {

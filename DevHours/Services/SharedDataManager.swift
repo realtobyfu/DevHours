@@ -23,6 +23,7 @@ final class SharedDataManager {
             Project.self,
             PlannedTask.self,
             RecurrenceRule.self,
+            Tag.self,
         ])
         let config = ModelConfiguration(
             schema: schema,

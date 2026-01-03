@@ -20,6 +20,9 @@ struct EntryEditSheet: View {
     @Query(sort: \Project.name) private var allProjects: [Project]
     #endif
 
+    // Query all tags for picker
+    @Query(sort: \Tag.name) private var allTags: [Tag]
+
     // Track running state separately for UI
     @State private var isRunning: Bool
     @State private var showDeleteConfirmation = false
@@ -146,6 +149,27 @@ struct EntryEditSheet: View {
                     }
                 }
                 #endif
+
+                // Tags Section
+                Section {
+                    if allTags.isEmpty {
+                        HStack {
+                            Text("No tags available")
+                                .foregroundStyle(.secondary)
+                            Spacer()
+                            NavigationLink {
+                                TagsListView()
+                            } label: {
+                                Text("Create")
+                                    .font(.subheadline)
+                            }
+                        }
+                    } else {
+                        TagMultiSelectView(allTags: allTags, selectedTags: $entry.tags)
+                    }
+                } header: {
+                    Text("Tags")
+                }
 
                 // Delete Section
                 Section {
