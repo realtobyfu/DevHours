@@ -1,5 +1,5 @@
 //
-//  Project.swift
+//  ProjectModel.swift
 //  DevHours
 //
 //  Created on 12/13/24.
