@@ -104,6 +104,7 @@ final class TimerEngine {
         guard let entry = runningEntry else { return }
         entry.title = title
         try? modelContext.save()
+        updateLiveActivity(title: title, projectName: entry.project?.name)
     }
 
     // MARK: - Private Helpers
@@ -163,7 +164,9 @@ final class TimerEngine {
 
         let initialState = TimerActivityAttributes.ContentState(
             startTime: startTime,
-            isRunning: true
+            isRunning: true,
+            taskTitle: title,
+            projectName: projectName
         )
 
         let content = ActivityContent(
@@ -196,7 +199,9 @@ final class TimerEngine {
 
         let finalState = TimerActivityAttributes.ContentState(
             startTime: activity.content.state.startTime,
-            isRunning: false
+            isRunning: false,
+            taskTitle: activity.content.state.taskTitle,
+            projectName: activity.content.state.projectName
         )
 
         Task {
@@ -208,6 +213,21 @@ final class TimerEngine {
         }
 
         currentActivity = nil
+    }
+
+    private func updateLiveActivity(title: String, projectName: String?) {
+        guard let activity = currentActivity else { return }
+
+        let updatedState = TimerActivityAttributes.ContentState(
+            startTime: activity.content.state.startTime,
+            isRunning: true,
+            taskTitle: title,
+            projectName: projectName
+        )
+
+        Task {
+            await activity.update(ActivityContent(state: updatedState, staleDate: Date.distantFuture))
+        }
     }
 
     /// Restores Live Activity if timer was running when app was killed

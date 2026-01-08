@@ -18,7 +18,7 @@ struct TimerLiveActivity: Widget {
             DynamicIsland {
                 // Expanded Dynamic Island
                 DynamicIslandExpandedRegion(.leading) {
-                    Text(context.attributes.taskTitle.isEmpty ? "Timer" : context.attributes.taskTitle)
+                    Text(context.state.taskTitle.isEmpty ? "Timer" : context.state.taskTitle)
                         .font(.headline)
                         .lineLimit(1)
                 }
@@ -31,7 +31,7 @@ struct TimerLiveActivity: Widget {
                 }
                 DynamicIslandExpandedRegion(.bottom) {
                     HStack {
-                        if let projectName = context.attributes.projectName, !projectName.isEmpty {
+                        if let projectName = context.state.projectName, !projectName.isEmpty {
                             Text(projectName)
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
@@ -75,16 +75,28 @@ struct LockScreenView: View {
         HStack(spacing: 12) {
             // Left: Title and project
             VStack(alignment: .leading, spacing: 4) {
-                Text(context.attributes.taskTitle.isEmpty ? "Timer" : context.attributes.taskTitle)
-                    .font(.headline)
-                    .lineLimit(1)
+                HStack(spacing: 6) {
+                    Circle()
+                        .fill(Color.red)
+                        .frame(width: 6, height: 6)
+                    Text("Time Elapsed")
+                        .font(.caption)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(.red)
+                }
 
-                if let projectName = context.attributes.projectName, !projectName.isEmpty {
+                Text(context.state.taskTitle.isEmpty ? "Timer" : context.state.taskTitle)
+                    .font(.headline)
+                    .lineLimit(2)
+                    .truncationMode(.tail)
+
+                if let projectName = context.state.projectName, !projectName.isEmpty {
                     Text(projectName)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
             }
+            .layoutPriority(1)
 
             Spacer()
 
@@ -93,6 +105,7 @@ struct LockScreenView: View {
                 .font(.system(size: 32, weight: .medium, design: .rounded))
                 .monospacedDigit()
                 .foregroundStyle(.primary)
+                .frame(minWidth: 72, alignment: .trailing)
 
             // Right: Stop button
             Link(destination: DeepLink.stopTimer) {
@@ -117,7 +130,9 @@ struct LockScreenView: View {
 } contentStates: {
     TimerActivityAttributes.ContentState(
         startTime: Date().addingTimeInterval(-3723),
-        isRunning: true
+        isRunning: true,
+        taskTitle: "Working on feature",
+        projectName: "DevHours App"
     )
 }
 
@@ -129,7 +144,9 @@ struct LockScreenView: View {
 } contentStates: {
     TimerActivityAttributes.ContentState(
         startTime: Date().addingTimeInterval(-3723),
-        isRunning: true
+        isRunning: true,
+        taskTitle: "Working on feature",
+        projectName: "DevHours App"
     )
 }
 
@@ -141,6 +158,8 @@ struct LockScreenView: View {
 } contentStates: {
     TimerActivityAttributes.ContentState(
         startTime: Date().addingTimeInterval(-3723),
-        isRunning: true
+        isRunning: true,
+        taskTitle: "Working on feature",
+        projectName: "DevHours App"
     )
 }

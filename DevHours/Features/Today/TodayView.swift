@@ -10,6 +10,7 @@ import SwiftData
 
 struct TodayView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(TimerEngine.self) private var timerEngine
 
     // Query all entries, then filter for today in Swift code
     @Query(sort: \TimeEntry.startTime, order: .reverse)
@@ -19,7 +20,6 @@ struct TodayView: View {
     @Query(sort: \PlannedTask.estimatedDuration, order: .reverse)
     private var allPlannedTasks: [PlannedTask]
 
-    @State private var timerEngine: TimerEngine?
     @State private var titleInput = ""
 
     // Filter for today's entries (Calendar methods not supported in @Query predicates)
@@ -39,12 +39,12 @@ struct TodayView: View {
 
     // Check if currently running timer is from a planned task
     private var isRunningPlannedTask: Bool {
-        timerEngine?.runningEntry?.sourcePlannedTask != nil
+        timerEngine.runningEntry?.sourcePlannedTask != nil
     }
 
     // Get the currently running planned task (if any)
     private var runningPlannedTask: PlannedTask? {
-        timerEngine?.runningEntry?.sourcePlannedTask
+        timerEngine.runningEntry?.sourcePlannedTask
     }
 
     var body: some View {
@@ -67,7 +67,7 @@ struct TodayView: View {
                         TimerCardContainer(
                             task: runningTask,
                             isRunning: true,
-                            elapsedTime: timerEngine?.elapsedTime ?? 0,
+                            elapsedTime: timerEngine.elapsedTime,
                             onStart: startPlannedTask,
                             onStop: stopTimer,
                             tintColor: .blue
@@ -87,10 +87,10 @@ struct TodayView: View {
                 // Ad-hoc Timer Control Section (hidden when working on a planned task)
                 if !isRunningPlannedTask {
                     EnhancedTimerCard(
-                        isRunning: timerEngine?.isRunning ?? false,
+                        isRunning: timerEngine.isRunning,
                         isLocked: false,
                         titleInput: $titleInput,
-                        elapsedTime: timerEngine?.elapsedTime ?? 0,
+                        elapsedTime: timerEngine.elapsedTime,
                         onStart: startTimer,
                         onStop: stopTimer
                     )
@@ -100,7 +100,7 @@ struct TodayView: View {
                 }
                 
                 // Planned Tasks Section (hidden when any timer is running)
-                if !todayPlannedTasks.isEmpty && !(timerEngine?.isRunning ?? false) {
+                if !todayPlannedTasks.isEmpty && !timerEngine.isRunning {
                     Section {
                         if todayPlannedTasks.count == 2 {
                             // Two tasks: side-by-side compact layout
@@ -176,7 +176,7 @@ struct TodayView: View {
                             .foregroundStyle(.primary)
                             .textCase(nil)
                     }
-                } else if timerEngine?.isRunning == false {
+                } else if timerEngine.isRunning == false {
                     EmptyTodayState()
                         .listRowBackground(Color.clear)
                         .listRowSeparator(.hidden)
@@ -190,24 +190,19 @@ struct TodayView: View {
             .navigationBarTitleDisplayMode(.large)
             #endif
         }
-        .onAppear {
-            if timerEngine == nil {
-                timerEngine = TimerEngine(modelContext: modelContext)
-            }
-        }
         .onChange(of: titleInput) { _, newValue in
-            timerEngine?.updateTitle(newValue)
+            timerEngine.updateTitle(newValue)
         }
     }
 
     // MARK: - Actions
     private func startTimer() {
-        timerEngine?.startTimer(title: titleInput)
+        timerEngine.startTimer(title: titleInput)
         // Keep titleInput so user can continue editing while timer runs
     }
 
     private func stopTimer() {
-        timerEngine?.stopTimer()
+        timerEngine.stopTimer()
         titleInput = ""  // Clear after stopping
     }
 
@@ -216,7 +211,7 @@ struct TodayView: View {
         titleInput = task.title
 
         // Start timer with task's project
-        timerEngine?.startTimer(
+        timerEngine.startTimer(
             title: task.title,
             project: task.project,
             sourcePlannedTask: task

@@ -79,9 +79,6 @@ struct TagEditSheet: View {
     private var previewBadge: some View {
         let color = Color.fromHex(selectedColorHex)
         return HStack(spacing: 4) {
-            Circle()
-                .fill(color)
-                .frame(width: 8, height: 8)
             Text(name.trimmingCharacters(in: .whitespaces))
                 .font(.caption)
                 .fontWeight(.medium)

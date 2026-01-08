@@ -10,18 +10,17 @@ import SwiftData
 
 @main
 struct DevHoursApp: App {
-    @State private var timerEngine: TimerEngine?
+    @State private var timerEngine = TimerEngine(
+        modelContext: SharedDataManager.shared.modelContext
+    )
 
     var body: some Scene {
         WindowGroup {
             MainTabView()
+                .environment(timerEngine)
                 .onAppear {
                     initializeRecurringTasks()
                     SharedDataManager.shared.updateWidgetData()
-                    // Initialize timer engine for URL handling
-                    if timerEngine == nil {
-                        timerEngine = TimerEngine(modelContext: SharedDataManager.shared.modelContext)
-                    }
                 }
                 .onOpenURL { url in
                     handleDeepLink(url)
@@ -43,7 +42,7 @@ struct DevHoursApp: App {
 
         switch url.host {
         case "stop-timer":
-            timerEngine?.stopTimer()
+            timerEngine.stopTimer()
             SharedDataManager.shared.updateWidgetData()
         default:
             break

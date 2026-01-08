@@ -18,5 +18,7 @@ struct TimerActivityAttributes: ActivityAttributes {
     struct ContentState: Codable, Hashable {
         let startTime: Date
         let isRunning: Bool
+        let taskTitle: String
+        let projectName: String?
     }
 }
