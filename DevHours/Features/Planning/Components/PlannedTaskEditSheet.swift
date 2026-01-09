@@ -18,12 +18,16 @@ struct PlannedTaskEditSheet: View {
     @Query(sort: \Project.name)
     private var projects: [Project]
 
+    @Query(sort: \Tag.name)
+    private var allTags: [Tag]
+
     @State private var title: String = ""
     @State private var plannedDate: Date = Date()
     @State private var estimatedDuration: TimeInterval = 3600  // Default 1 hour
     @State private var selectedProject: Project?
     @State private var recurrenceFrequency: RecurrenceFrequency?
     @State private var recurrenceEndDate: Date?
+    @State private var selectedTags: [Tag] = []
 
     private var isEditing: Bool {
         existingTask != nil
@@ -79,6 +83,27 @@ struct PlannedTaskEditSheet: View {
                     }
                 }
 
+                // Tags Section
+                Section {
+                    if allTags.isEmpty {
+                        HStack {
+                            Text("No tags available")
+                                .foregroundStyle(.secondary)
+                            Spacer()
+                            NavigationLink {
+                                TagsListView()
+                            } label: {
+                                Text("Create")
+                                    .font(.subheadline)
+                            }
+                        }
+                    } else {
+                        TagMultiSelectView(allTags: allTags, selectedTags: $selectedTags)
+                    }
+                } header: {
+                    Text("Tags")
+                }
+
                 // Delete button for existing tasks
                 if isEditing {
                     Section {
@@ -126,6 +151,7 @@ struct PlannedTaskEditSheet: View {
             selectedProject = task.project
             recurrenceFrequency = task.recurrenceRule?.frequencyType
             recurrenceEndDate = task.recurrenceRule?.endDate
+            selectedTags = task.tags
         } else {
             plannedDate = initialDate
         }
@@ -144,6 +170,7 @@ struct PlannedTaskEditSheet: View {
             task.plannedDate = normalizedDate
             task.estimatedDuration = estimatedDuration
             task.project = selectedProject
+            task.tags = selectedTags
 
             // Update recurrence rule if this is a recurring parent
             if task.isRecurringParent {
@@ -176,7 +203,8 @@ struct PlannedTaskEditSheet: View {
                 plannedDate: normalizedDate,
                 estimatedDuration: estimatedDuration,
                 project: selectedProject,
-                recurrenceRule: recurrenceRule
+                recurrenceRule: recurrenceRule,
+                tags: selectedTags
             )
             modelContext.insert(newTask)
         }
@@ -212,5 +240,5 @@ struct PlannedTaskEditSheet: View {
 
 #Preview("New Task") {
     PlannedTaskEditSheet(initialDate: Date(), existingTask: nil)
-        .modelContainer(for: [PlannedTask.self, Project.self], inMemory: true)
+        .modelContainer(for: [PlannedTask.self, Project.self, Tag.self], inMemory: true)
 }

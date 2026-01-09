@@ -14,9 +14,8 @@ struct EntryEditSheet: View {
 
     @Bindable var entry: TimeEntry
 
-    // Query all clients and projects for pickers (iOS only)
+    // Query all projects for picker (iOS only)
     #if os(iOS)
-    @Query(sort: \Client.name) private var allClients: [Client]
     @Query(sort: \Project.name) private var allProjects: [Project]
     #endif
 
@@ -41,17 +40,6 @@ struct EntryEditSheet: View {
         _isRunning = State(initialValue: entry.endTime == nil)
         _tempEndTime = State(initialValue: entry.endTime ?? Date.now)
     }
-
-    // Projects filtered by selected client (iOS only)
-    #if os(iOS)
-    private var filteredProjects: [Project] {
-        if let client = entry.client {
-            return allProjects.filter { $0.client?.id == client.id }
-        } else {
-            return allProjects
-        }
-    }
-    #endif
 
     var body: some View {
         NavigationStack {
@@ -115,38 +103,16 @@ struct EntryEditSheet: View {
                     }
                 }
 
-                // Client & Project Section (iOS only - pickers cause issues on macOS)
+                // Project Section (iOS only - pickers cause issues on macOS)
                 #if os(iOS)
-                Section("Organization") {
-                    Picker("Client", selection: $entry.client) {
-                        Text("None").tag(nil as Client?)
-                        ForEach(allClients) { client in
-                            Text(client.name).tag(client as Client?)
-                        }
-                    }
-                    .pickerStyle(.menu)
-                    .onChange(of: entry.client) { oldValue, newValue in
-                        // Clear project if client changed and project doesn't belong to new client
-                        if let project = entry.project,
-                           project.client?.id != newValue?.id {
-                            entry.project = nil
-                        }
-                    }
-
+                Section("Project") {
                     Picker("Project", selection: $entry.project) {
                         Text("None").tag(nil as Project?)
-                        ForEach(filteredProjects) { project in
+                        ForEach(allProjects) { project in
                             Text(project.name).tag(project as Project?)
                         }
                     }
                     .pickerStyle(.menu)
-                    .disabled(entry.client == nil)
-
-                    if entry.client == nil {
-                        Text("Select a client to choose a project")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
                 }
                 #endif
 

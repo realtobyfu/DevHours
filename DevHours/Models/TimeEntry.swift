@@ -27,15 +27,32 @@ final class TimeEntry {
     @Relationship(deleteRule: .nullify, inverse: \Tag.timeEntries)
     var tags: [Tag] = []
 
-    // Computed property for duration - always accurate
-    var duration: TimeInterval {
-        if let endTime = endTime {
-            // Stopped timer - fixed duration
-            return endTime.timeIntervalSince(startTime)
-        } else {
-            // Running timer - calculate from now
-            return Date.now.timeIntervalSince(startTime)
+    // Pause intervals for this timer (supports pause/resume functionality)
+    @Relationship(deleteRule: .cascade)
+    var pauseIntervals: [PauseInterval] = []
+
+    /// Whether the timer is currently paused (running but time frozen)
+    var isPaused: Bool {
+        guard endTime == nil else { return false }  // Stopped timers aren't paused
+        guard let lastPause = pauseIntervals.last else { return false }
+        return lastPause.resumedAt == nil
+    }
+
+    /// Total duration of all pause intervals
+    var totalPausedDuration: TimeInterval {
+        pauseIntervals.reduce(0.0) { result, interval in
+            result + interval.duration
         }
+    }
+
+    // Computed property for duration - excludes paused time
+    var duration: TimeInterval {
+        let now = Date.now
+        let endPoint = endTime ?? now
+        let grossDuration = endPoint.timeIntervalSince(startTime)
+
+        // Subtract total paused time for accurate duration
+        return max(0, grossDuration - totalPausedDuration)
     }
 
     // Helper to check if this entry is from today

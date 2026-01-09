@@ -14,9 +14,12 @@ struct TimerCardContainer: View {
 
     let task: PlannedTask?
     let isRunning: Bool
+    let isPaused: Bool
     let elapsedTime: TimeInterval
     let onStart: (PlannedTask) -> Void
     let onStop: () -> Void
+    let onPause: () -> Void
+    let onResume: () -> Void
     var tintColor: Color = .blue
     var isCompact: Bool = false
 
@@ -26,15 +29,21 @@ struct TimerCardContainer: View {
     // Color palette for multi-task differentiation
     static let cardTints: [Color] = [.blue, .purple, .orange, .teal]
 
+    /// True if there's an active timer (running or paused)
+    private var hasActiveTimer: Bool {
+        isRunning || isPaused
+    }
+
     var body: some View {
         VStack(spacing: 0) {
-            if isRunning, let task {
+            if hasActiveTimer, let task {
                 runningCard(task)
             } else if let task {
                 plannedCard(task)
             }
         }
         .animation(.spring(response: 0.4, dampingFraction: 0.85), value: isRunning)
+        .animation(.spring(response: 0.4, dampingFraction: 0.85), value: isPaused)
     }
 
     // MARK: - Planned State
@@ -133,18 +142,34 @@ struct TimerCardContainer: View {
             // Timer display
             Text(DurationFormatter.formatHoursMinutesSeconds(elapsedTime))
                 .font(.system(size: 56, weight: .medium, design: .rounded))
-                .foregroundStyle(.primary)
+                .foregroundStyle(isPaused ? .secondary : .primary)
                 .monospacedDigit()
                 .transition(.scale(scale: 0.8).combined(with: .opacity))
                 .accessibilityLabel("Elapsed time: \(DurationFormatter.formatAccessible(elapsedTime))")
+
+            // Status indicator
+            if isPaused {
+                HStack(spacing: 6) {
+                    Image(systemName: "pause.circle.fill")
+                        .foregroundStyle(.orange)
+                    Text("Paused")
+                        .foregroundStyle(.orange)
+                }
+                .font(.subheadline)
+            }
 
             // Remaining duration
             durationChip(task, showRemaining: true)
                 .matchedGeometryEffect(id: "duration-\(task.id)", in: animation)
 
-            // Stop button
-            Button(action: onStop) {
-                Label("Stop Timer", systemImage: "stop.fill")
+            // Control buttons
+            HStack(spacing: 12) {
+                // Pause/Resume button
+                Button(action: isPaused ? onResume : onPause) {
+                    Label(
+                        isPaused ? "Resume" : "Pause",
+                        systemImage: isPaused ? "play.fill" : "pause.fill"
+                    )
                     .font(.headline)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 14)
@@ -152,18 +177,46 @@ struct TimerCardContainer: View {
                         RoundedRectangle(cornerRadius: 12)
                             .fill(
                                 LinearGradient(
-                                    colors: [Color.red.opacity(0.9), Color.red],
+                                    colors: isPaused
+                                        ? [Color.green.opacity(0.9), Color.green]
+                                        : [Color.orange.opacity(0.9), Color.orange],
                                     startPoint: .topLeading,
                                     endPoint: .bottomTrailing
                                 )
                             )
-                            .shadow(color: Color.red.opacity(0.3), radius: 8, y: 4)
+                            .shadow(
+                                color: isPaused ? Color.green.opacity(0.3) : Color.orange.opacity(0.3),
+                                radius: 8, y: 4
+                            )
                     )
                     .foregroundStyle(.white)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(isPaused ? "Resume timer" : "Pause timer")
+
+                // Stop button
+                Button(action: onStop) {
+                    Label("Stop", systemImage: "stop.fill")
+                        .font(.headline)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
+                        .background(
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(
+                                    LinearGradient(
+                                        colors: [Color.red.opacity(0.9), Color.red],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    )
+                                )
+                                .shadow(color: Color.red.opacity(0.3), radius: 8, y: 4)
+                        )
+                        .foregroundStyle(.white)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Stop timer")
             }
-            .buttonStyle(.plain)
             .transition(.move(edge: .bottom).combined(with: .opacity))
-            .accessibilityLabel("Stop timer")
         }
         .padding(20)
         .background(cardBackground)

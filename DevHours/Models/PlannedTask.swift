@@ -29,6 +29,10 @@ final class PlannedTask {
     @Relationship(deleteRule: .nullify)
     var linkedTimeEntries: [TimeEntry] = []
 
+    // Tags for categorization (many-to-many)
+    @Relationship(deleteRule: .nullify, inverse: \Tag.plannedTasks)
+    var tags: [Tag] = []
+
     // Computed properties
     var isToday: Bool {
         Calendar.current.isDateInToday(plannedDate)
@@ -69,7 +73,8 @@ final class PlannedTask {
         estimatedDuration: TimeInterval,
         project: Project? = nil,
         recurrenceRule: RecurrenceRule? = nil,
-        parentTaskId: UUID? = nil
+        parentTaskId: UUID? = nil,
+        tags: [Tag] = []
     ) {
         self.id = UUID()
         self.title = title
@@ -81,6 +86,7 @@ final class PlannedTask {
         self.isCompleted = false
         self.completedAt = nil
         self.linkedTimeEntries = []
+        self.tags = tags
         self.createdAt = Date.now
     }
 }

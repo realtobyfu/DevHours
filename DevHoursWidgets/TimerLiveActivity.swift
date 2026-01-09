@@ -18,15 +18,19 @@ struct TimerLiveActivity: Widget {
             DynamicIsland {
                 // Expanded Dynamic Island
                 DynamicIslandExpandedRegion(.leading) {
-                    Text(context.state.taskTitle.isEmpty ? "Timer" : context.state.taskTitle)
-                        .font(.headline)
-                        .lineLimit(1)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(context.state.taskTitle.isEmpty ? "Timer" : context.state.taskTitle)
+                            .font(.headline)
+                            .lineLimit(1)
+                        if context.state.isPaused {
+                            Text("Paused")
+                                .font(.caption)
+                                .foregroundStyle(.orange)
+                        }
+                    }
                 }
                 DynamicIslandExpandedRegion(.trailing) {
-                    Text(context.state.startTime, style: .timer)
-                        .font(.title2)
-                        .fontWeight(.semibold)
-                        .monospacedDigit()
+                    timerDisplay(context: context)
                         .frame(width: 90, alignment: .trailing)
                 }
                 DynamicIslandExpandedRegion(.bottom) {
@@ -37,6 +41,19 @@ struct TimerLiveActivity: Widget {
                                 .foregroundStyle(.secondary)
                         }
                         Spacer()
+
+                        // Pause/Resume button
+                        Link(destination: context.state.isPaused ? DeepLink.resumeTimer : DeepLink.pauseTimer) {
+                            Label(
+                                context.state.isPaused ? "Resume" : "Pause",
+                                systemImage: context.state.isPaused ? "play.fill" : "pause.fill"
+                            )
+                            .font(.caption)
+                            .fontWeight(.medium)
+                        }
+                        .tint(context.state.isPaused ? .green : .orange)
+
+                        // Stop button
                         Link(destination: DeepLink.stopTimer) {
                             Label("Stop", systemImage: "stop.fill")
                                 .font(.caption)
@@ -46,22 +63,38 @@ struct TimerLiveActivity: Widget {
                     }
                 }
             } compactLeading: {
-                // Compact leading - timer icon
-                Image(systemName: "timer")
+                // Compact leading - timer/pause icon
+                Image(systemName: context.state.isPaused ? "pause.circle.fill" : "timer")
                     .font(.caption)
+                    .foregroundStyle(context.state.isPaused ? .orange : .primary)
                     .padding(.leading, 4)
             } compactTrailing: {
-                // Compact trailing - timer
-                Text(context.state.startTime, style: .timer)
+                // Compact trailing - timer (frozen when paused)
+                timerDisplay(context: context)
                     .font(.caption)
                     .fontWeight(.medium)
-                    .monospacedDigit()
                     .frame(width: 50)
             } minimal: {
-                // Minimal view - timer icon
-                Image(systemName: "timer")
+                // Minimal view - timer/pause icon
+                Image(systemName: context.state.isPaused ? "pause.circle.fill" : "timer")
                     .font(.caption2)
+                    .foregroundStyle(context.state.isPaused ? .orange : .primary)
             }
+        }
+    }
+
+    @ViewBuilder
+    private func timerDisplay(context: ActivityViewContext<TimerActivityAttributes>) -> some View {
+        if context.state.isPaused, let elapsed = context.state.elapsedAtPause {
+            // Show frozen time when paused
+            Text(DurationFormatter.formatHoursMinutesSeconds(elapsed))
+                .monospacedDigit()
+                .foregroundStyle(.secondary)
+        } else {
+            // Live timer when running
+            Text(context.state.startTime, style: .timer)
+                .monospacedDigit()
+                .foregroundStyle(.primary)
         }
     }
 }
@@ -77,12 +110,12 @@ struct LockScreenView: View {
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 6) {
                     Circle()
-                        .fill(Color.red)
+                        .fill(context.state.isPaused ? Color.orange : Color.red)
                         .frame(width: 6, height: 6)
-                    Text("Time Elapsed")
+                    Text(context.state.isPaused ? "Paused" : "Time Elapsed")
                         .font(.caption)
                         .fontWeight(.semibold)
-                        .foregroundStyle(.red)
+                        .foregroundStyle(context.state.isPaused ? .orange : .red)
                 }
 
                 Text(context.state.taskTitle.isEmpty ? "Timer" : context.state.taskTitle)
@@ -100,18 +133,36 @@ struct LockScreenView: View {
 
             Spacer()
 
-            // Center: Timer display
-            Text(context.state.startTime, style: .timer)
-                .font(.system(size: 32, weight: .medium, design: .rounded))
-                .monospacedDigit()
-                .foregroundStyle(.primary)
-                .frame(minWidth: 72, alignment: .trailing)
+            // Center: Timer display (frozen when paused)
+            if context.state.isPaused, let elapsed = context.state.elapsedAtPause {
+                Text(DurationFormatter.formatHoursMinutesSeconds(elapsed))
+                    .font(.system(size: 32, weight: .medium, design: .rounded))
+                    .monospacedDigit()
+                    .foregroundStyle(.secondary)
+                    .frame(minWidth: 72, alignment: .trailing)
+            } else {
+                Text(context.state.startTime, style: .timer)
+                    .font(.system(size: 32, weight: .medium, design: .rounded))
+                    .monospacedDigit()
+                    .foregroundStyle(.primary)
+                    .frame(minWidth: 72, alignment: .trailing)
+            }
 
-            // Right: Stop button
-            Link(destination: DeepLink.stopTimer) {
-                Image(systemName: "stop.circle.fill")
-                    .font(.system(size: 32))
-                    .foregroundStyle(.red)
+            // Right: Control buttons
+            HStack(spacing: 8) {
+                // Pause/Resume button
+                Link(destination: context.state.isPaused ? DeepLink.resumeTimer : DeepLink.pauseTimer) {
+                    Image(systemName: context.state.isPaused ? "play.circle.fill" : "pause.circle.fill")
+                        .font(.system(size: 28))
+                        .foregroundStyle(context.state.isPaused ? .green : .orange)
+                }
+
+                // Stop button
+                Link(destination: DeepLink.stopTimer) {
+                    Image(systemName: "stop.circle.fill")
+                        .font(.system(size: 28))
+                        .foregroundStyle(.red)
+                }
             }
         }
         .padding()
@@ -122,7 +173,7 @@ struct LockScreenView: View {
 
 // MARK: - Previews
 
-#Preview("Lock Screen", as: .content, using: TimerActivityAttributes(
+#Preview("Lock Screen - Running", as: .content, using: TimerActivityAttributes(
     taskTitle: "Working on feature",
     projectName: "DevHours App"
 )) {
@@ -131,6 +182,24 @@ struct LockScreenView: View {
     TimerActivityAttributes.ContentState(
         startTime: Date().addingTimeInterval(-3723),
         isRunning: true,
+        isPaused: false,
+        elapsedAtPause: nil,
+        taskTitle: "Working on feature",
+        projectName: "DevHours App"
+    )
+}
+
+#Preview("Lock Screen - Paused", as: .content, using: TimerActivityAttributes(
+    taskTitle: "Working on feature",
+    projectName: "DevHours App"
+)) {
+    TimerLiveActivity()
+} contentStates: {
+    TimerActivityAttributes.ContentState(
+        startTime: Date().addingTimeInterval(-3723),
+        isRunning: false,
+        isPaused: true,
+        elapsedAtPause: 3723,
         taskTitle: "Working on feature",
         projectName: "DevHours App"
     )
@@ -145,6 +214,8 @@ struct LockScreenView: View {
     TimerActivityAttributes.ContentState(
         startTime: Date().addingTimeInterval(-3723),
         isRunning: true,
+        isPaused: false,
+        elapsedAtPause: nil,
         taskTitle: "Working on feature",
         projectName: "DevHours App"
     )
@@ -159,6 +230,8 @@ struct LockScreenView: View {
     TimerActivityAttributes.ContentState(
         startTime: Date().addingTimeInterval(-3723),
         isRunning: true,
+        isPaused: false,
+        elapsedAtPause: nil,
         taskTitle: "Working on feature",
         projectName: "DevHours App"
     )

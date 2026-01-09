@@ -9,34 +9,52 @@ import SwiftUI
 
 struct EnhancedTimerCard: View {
     let isRunning: Bool
+    let isPaused: Bool
     let isLocked: Bool
     @Binding var titleInput: String
     let elapsedTime: TimeInterval
     let onStart: () -> Void
     let onStop: () -> Void
+    let onPause: () -> Void
+    let onResume: () -> Void
+
+    /// True if there's an active timer (running or paused)
+    private var hasActiveTimer: Bool {
+        isRunning || isPaused
+    }
 
     var body: some View {
         VStack(spacing: 20) {
-            // Hero Timer Display (when running)
-            if isRunning {
+            // Hero Timer Display (when running or paused)
+            if hasActiveTimer {
                 VStack(spacing: 8) {
                     Text(DurationFormatter.formatHoursMinutesSeconds(elapsedTime))
                         .font(.system(size: 64, weight: .semibold, design: .rounded))
-                        .foregroundStyle(.primary)
+                        .foregroundStyle(isPaused ? .secondary : .primary)
                         .monospacedDigit()
                         .transition(.scale.combined(with: .opacity))
                         .accessibilityLabel("Elapsed time: \(DurationFormatter.formatAccessible(elapsedTime))")
 
-                    Text("Time tracking in progress")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                    // Status indicator
+                    HStack(spacing: 6) {
+                        if isPaused {
+//                            Image(systemName: "pause.circle.fill")
+//                                .foregroundStyle(.orange)
+                            Text("Paused")
+                                .foregroundStyle(.orange)
+                        } else {
+                            Text("Time tracking in progress")
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    .font(.subheadline)
                 }
                 .padding(.vertical, 20)
             }
 
             // Title Input with enhanced styling
             VStack(alignment: .leading, spacing: 8) {
-                if isRunning {
+                if hasActiveTimer {
                     Text("What are you working on?")
                         .font(.caption)
                         .foregroundStyle(.secondary)
@@ -47,7 +65,7 @@ struct EnhancedTimerCard: View {
                 TextField("What are you working on?", text: $titleInput)
                     .textFieldStyle(.plain)
                     .font(.title3)
-                    .fontWeight(isRunning ? .semibold : .regular)
+                    .fontWeight(hasActiveTimer ? .semibold : .regular)
                     .padding(16)
                     .background(
                         RoundedRectangle(cornerRadius: 12)
@@ -56,7 +74,7 @@ struct EnhancedTimerCard: View {
                     .overlay(
                         RoundedRectangle(cornerRadius: 12)
                             .strokeBorder(
-                                isRunning ? Color.accentColor.opacity(0.3) : Color.clear,
+                                hasActiveTimer ? Color.accentColor.opacity(0.3) : Color.clear,
                                 lineWidth: 2
                             )
                     )
@@ -65,24 +83,60 @@ struct EnhancedTimerCard: View {
                     .accessibilityLabel("Timer title")
             }
 
-            // Enhanced Start/Stop Button
-            Button(action: isRunning ? onStop : onStart) {
-                Label(
-                    isRunning ? "Stop Timer" : "Start Timer",
-                    systemImage: isRunning ? "stop.fill" : "play.fill"
-                )
-                .font(.headline)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 16)
-                .background(
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(buttonGradient)
-                        .shadow(color: buttonShadowColor, radius: 8, y: 4)
-                )
-                .foregroundStyle(.white)
+            // Timer Control Buttons
+            if hasActiveTimer {
+                // Show Pause/Resume and Stop buttons side by side
+                HStack(spacing: 12) {
+                    // Pause/Resume Button
+                    Button(action: isPaused ? onResume : onPause) {
+                        Image(systemName: isPaused ? "play.fill" : "pause.fill")
+                            .font(.headline)
+                            .frame(width: 52, height: 52)
+                            .background(
+                                Circle()
+                                    .fill(isPaused ? greenGradient : orangeGradient)
+                                    .shadow(color: isPaused ? .green.opacity(0.3) : .orange.opacity(0.3), radius: 8, y: 4)
+                            )
+                            .foregroundStyle(.white)
+                    }
+                    .buttonStyle(.plain)
+                    .layoutPriority(0)
+                    .accessibilityLabel(isPaused ? "Resume timer" : "Pause timer")
+
+                    // Stop Button
+                    Button(action: onStop) {
+                        Label("Stop", systemImage: "stop.fill")
+                            .font(.headline)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 16)
+                            .padding(.horizontal, 8)
+                            .background(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .fill(redGradient)
+                                    .shadow(color: .red.opacity(0.3), radius: 8, y: 4)
+                            )
+                            .foregroundStyle(.white)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Stop timer")
+                }
+            } else {
+                // Start Button
+                Button(action: onStart) {
+                    Label("Start Timer", systemImage: "play.fill")
+                        .font(.headline)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 16)
+                        .background(
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(greenGradient)
+                                .shadow(color: .green.opacity(0.3), radius: 8, y: 4)
+                        )
+                        .foregroundStyle(.white)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Start timer")
             }
-            .buttonStyle(.plain)
-            .accessibilityLabel(isRunning ? "Stop timer" : "Start timer")
         }
         .padding(20)
         .background(
@@ -93,25 +147,30 @@ struct EnhancedTimerCard: View {
         .frame(maxWidth: 500)
         .frame(maxWidth: .infinity, alignment: .center)
         .animation(.spring(response: 0.4, dampingFraction: 0.8), value: isRunning)
+        .animation(.spring(response: 0.4, dampingFraction: 0.8), value: isPaused)
     }
 
-    private var buttonGradient: LinearGradient {
-        if isRunning {
-            return LinearGradient(
-                colors: [Color.red.opacity(0.9), Color.red],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-        } else {
-            return LinearGradient(
-                colors: [Color.green.opacity(0.9), Color.green],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-        }
+    private var greenGradient: LinearGradient {
+        LinearGradient(
+            colors: [Color.green.opacity(0.9), Color.green],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
     }
 
-    private var buttonShadowColor: Color {
-        isRunning ? Color.red.opacity(0.3) : Color.green.opacity(0.3)
+    private var orangeGradient: LinearGradient {
+        LinearGradient(
+            colors: [Color.orange.opacity(0.9), Color.orange],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+    }
+
+    private var redGradient: LinearGradient {
+        LinearGradient(
+            colors: [Color.red.opacity(0.9), Color.red],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
     }
 }

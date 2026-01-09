@@ -21,9 +21,18 @@ struct PlannedTaskCard: View {
         HStack(spacing: 16) {
             // Task details on the left
             VStack(alignment: .leading, spacing: 6) {
-                Text(task.title.isEmpty ? "Untitled Task" : task.title)
-                    .font(.headline)
-                    .lineLimit(2)
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    Text(task.title.isEmpty ? "Untitled Task" : task.title)
+                        .font(.headline)
+                        .lineLimit(2)
+                        .layoutPriority(1)
+
+                    Spacer(minLength: 8)
+
+                    if !task.tags.isEmpty {
+                        TagsFlowView(tags: task.tags, compact: true)
+                    }
+                }
 
                 HStack(spacing: 8) {
                     // Remaining duration (or full estimate if not started)
@@ -50,6 +59,7 @@ struct PlannedTaskCard: View {
                             .foregroundStyle(.tertiary)
                     }
                 }
+
             }
 
             Spacer()

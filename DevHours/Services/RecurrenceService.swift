@@ -180,7 +180,8 @@ final class RecurrenceService {
             plannedDate: date,
             estimatedDuration: parent.estimatedDuration,
             project: parent.project,
-            parentTaskId: parent.id
+            parentTaskId: parent.id,
+            tags: parent.tags
         )
         modelContext.insert(instance)
     }

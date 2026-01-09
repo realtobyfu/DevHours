@@ -9,4 +9,6 @@ import Foundation
 
 enum DeepLink {
     static let stopTimer = URL(string: "devhours://stop-timer")!
+    static let pauseTimer = URL(string: "devhours://pause-timer")!
+    static let resumeTimer = URL(string: "devhours://resume-timer")!
 }

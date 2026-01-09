@@ -28,10 +28,20 @@ struct PlannedTaskRow: View {
 //            .accessibilityLabel(task.isCompleted ? "Mark incomplete" : "Mark complete")
 
             VStack(alignment: .leading, spacing: 4) {
-                Text(task.title.isEmpty ? "Untitled Task" : task.title)
-                    .font(.headline)
-                    .strikethrough(task.isCompleted)
-                    .foregroundStyle(task.isCompleted ? .secondary : .primary)
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    Text(task.title.isEmpty ? "Untitled Task" : task.title)
+                        .font(.headline)
+                        .strikethrough(task.isCompleted)
+                        .foregroundStyle(task.isCompleted ? .secondary : .primary)
+                        .lineLimit(2)
+                        .layoutPriority(1)
+
+                    Spacer(minLength: 8)
+
+                    if !task.tags.isEmpty {
+                        TagsFlowView(tags: task.tags, compact: true)
+                    }
+                }
 
                 HStack(spacing: 8) {
                     // Duration estimate

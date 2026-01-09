@@ -43,6 +43,38 @@ struct StopTimerIntent: AppIntent {
     }
 }
 
+// MARK: - Pause Timer Intent
+
+struct PauseTimerIntent: AppIntent {
+    static var title: LocalizedStringResource = "Pause Timer"
+    static var description = IntentDescription("Pause the current timer")
+
+    static var isDiscoverable: Bool = true
+
+    @MainActor
+    func perform() async throws -> some IntentResult {
+        SharedDataManager.shared.pauseTimer()
+        SharedDataManager.shared.updateWidgetData()
+        return .result()
+    }
+}
+
+// MARK: - Resume Timer Intent
+
+struct ResumeTimerIntent: AppIntent {
+    static var title: LocalizedStringResource = "Resume Timer"
+    static var description = IntentDescription("Resume the paused timer")
+
+    static var isDiscoverable: Bool = true
+
+    @MainActor
+    func perform() async throws -> some IntentResult {
+        SharedDataManager.shared.resumeTimer()
+        SharedDataManager.shared.updateWidgetData()
+        return .result()
+    }
+}
+
 // MARK: - Toggle Timer Intent (for widget button)
 
 struct ToggleTimerIntent: AppIntent {

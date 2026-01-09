@@ -74,8 +74,8 @@
 		3EEC6C362EEE6BA800CC7494 /* DevHours */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				3EAF57462F00F16D00EA8A10 /* Exceptions for "DevHours" folder in "DevHoursWidgetsExtension" target */,
 				3F1C8A9B2F02012300A1B2C3 /* Exceptions for "DevHours" folder in "DevHours" target */,
+				3EAF57462F00F16D00EA8A10 /* Exceptions for "DevHours" folder in "DevHoursWidgetsExtension" target */,
 			);
 			path = DevHours;
 			sourceTree = "<group>";
@@ -461,9 +461,9 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
 				ENABLE_PREVIEWS = YES;
-				EXCLUDED_RESOURCE_FILE_NAMES = "Info.plist";
+				EXCLUDED_RESOURCE_FILE_NAMES = Info.plist;
 				GENERATE_INFOPLIST_FILE = NO;
-				INFOPLIST_FILE = "DevHours/Info.plist";
+				INFOPLIST_FILE = DevHours/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -499,9 +499,9 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
 				ENABLE_PREVIEWS = YES;
-				EXCLUDED_RESOURCE_FILE_NAMES = "Info.plist";
+				EXCLUDED_RESOURCE_FILE_NAMES = Info.plist;
 				GENERATE_INFOPLIST_FILE = NO;
-				INFOPLIST_FILE = "DevHours/Info.plist";
+				INFOPLIST_FILE = DevHours/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",

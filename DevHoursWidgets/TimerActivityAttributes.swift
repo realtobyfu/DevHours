@@ -18,6 +18,8 @@ struct TimerActivityAttributes: ActivityAttributes {
     struct ContentState: Codable, Hashable {
         let startTime: Date
         let isRunning: Bool
+        let isPaused: Bool
+        let elapsedAtPause: TimeInterval?  // Frozen elapsed time when paused
         let taskTitle: String
         let projectName: String?
     }

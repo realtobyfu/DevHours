@@ -24,6 +24,7 @@ final class SharedDataManager {
             PlannedTask.self,
             RecurrenceRule.self,
             Tag.self,
+            PauseInterval.self,
         ])
         let config = ModelConfiguration(
             schema: schema,
@@ -55,6 +56,12 @@ final class SharedDataManager {
     func stopTimer() {
         let descriptor = FetchDescriptor<TimeEntry>(predicate: #Predicate { $0.endTime == nil })
         if let running = try? modelContext.fetch(descriptor).first {
+            // If paused, close the open pause interval first
+            if let currentPause = running.pauseIntervals.last,
+               currentPause.resumedAt == nil {
+                currentPause.resumedAt = .now
+            }
+
             running.endTime = .now
 
             // Auto-complete linked planned task if fully worked
@@ -65,6 +72,28 @@ final class SharedDataManager {
 
             try? modelContext.save()
         }
+    }
+
+    func pauseTimer() {
+        let descriptor = FetchDescriptor<TimeEntry>(predicate: #Predicate { $0.endTime == nil })
+        guard let running = try? modelContext.fetch(descriptor).first,
+              !running.isPaused else { return }
+
+        let pauseInterval = PauseInterval(pausedAt: .now)
+        pauseInterval.timeEntry = running
+        running.pauseIntervals.append(pauseInterval)
+        modelContext.insert(pauseInterval)
+        try? modelContext.save()
+    }
+
+    func resumeTimer() {
+        let descriptor = FetchDescriptor<TimeEntry>(predicate: #Predicate { $0.endTime == nil })
+        guard let running = try? modelContext.fetch(descriptor).first,
+              let currentPause = running.pauseIntervals.last,
+              currentPause.resumedAt == nil else { return }
+
+        currentPause.resumedAt = .now
+        try? modelContext.save()
     }
 
     func currentTimer() -> TimeEntry? {
@@ -99,10 +128,13 @@ final class SharedDataManager {
             )
         }
 
+        let isPaused = runningTimer?.isPaused ?? false
         let widgetTimer = WidgetTimerData(
-            isRunning: runningTimer != nil,
+            isRunning: runningTimer != nil && !isPaused,
+            isPaused: isPaused,
             title: runningTimer?.title,
-            startTime: runningTimer?.startTime
+            startTime: runningTimer?.startTime,
+            elapsedAtPause: isPaused ? runningTimer?.duration : nil
         )
 
         let widgetData = WidgetData(

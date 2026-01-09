@@ -21,6 +21,7 @@ struct TodayView: View {
     private var allPlannedTasks: [PlannedTask]
 
     @State private var titleInput = ""
+    @State private var titleUpdateTask: Task<Void, Never>?
 
     // Filter for today's entries (Calendar methods not supported in @Query predicates)
     private var todayEntries: [TimeEntry] {
@@ -47,6 +48,11 @@ struct TodayView: View {
         timerEngine.runningEntry?.sourcePlannedTask
     }
 
+    // Check if there's any active timer (running or paused)
+    private var hasActiveTimer: Bool {
+        timerEngine.hasActiveTimer
+    }
+
     var body: some View {
         NavigationStack {
             List {
@@ -66,10 +72,13 @@ struct TodayView: View {
                     Section {
                         TimerCardContainer(
                             task: runningTask,
-                            isRunning: true,
+                            isRunning: timerEngine.isRunning,
+                            isPaused: timerEngine.isPaused,
                             elapsedTime: timerEngine.elapsedTime,
                             onStart: startPlannedTask,
                             onStop: stopTimer,
+                            onPause: pauseTimer,
+                            onResume: resumeTimer,
                             tintColor: .blue
                         )
                         .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
@@ -88,53 +97,61 @@ struct TodayView: View {
                 if !isRunningPlannedTask {
                     EnhancedTimerCard(
                         isRunning: timerEngine.isRunning,
+                        isPaused: timerEngine.isPaused,
                         isLocked: false,
                         titleInput: $titleInput,
                         elapsedTime: timerEngine.elapsedTime,
                         onStart: startTimer,
-                        onStop: stopTimer
+                        onStop: stopTimer,
+                        onPause: pauseTimer,
+                        onResume: resumeTimer
                     )
                     .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
                     .listRowBackground(Color.clear)
                     .listRowSeparator(.hidden)
                 }
-                
-                // Planned Tasks Section (hidden when any timer is running)
-                if !todayPlannedTasks.isEmpty && !timerEngine.isRunning {
+
+                // Planned Tasks Section (hidden when any timer is active - running or paused)
+                if !todayPlannedTasks.isEmpty && !hasActiveTimer {
                     Section {
-                        if todayPlannedTasks.count == 2 {
-                            // Two tasks: side-by-side compact layout
-                            HStack(spacing: 12) {
-                                ForEach(Array(todayPlannedTasks.enumerated()), id: \.element.id) { index, task in
-                                    TimerCardContainer(
-                                        task: task,
-                                        isRunning: false,
-                                        elapsedTime: 0,
-                                        onStart: startPlannedTask,
-                                        onStop: stopTimer,
-                                        tintColor: TimerCardContainer.cardTints[index % TimerCardContainer.cardTints.count],
-                                        isCompact: true
-                                    )
-                                }
-                            }
-                            .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
-                            .listRowBackground(Color.clear)
-                            .listRowSeparator(.hidden)
-                        } else {
-                            // 1 or 3+ tasks: vertical stack with full cards
-                            ForEach(Array(todayPlannedTasks.enumerated()), id: \.element.id) { index, task in
+                        // First row: show up to two compact cards side by side.
+                        HStack(spacing: 12) {
+                            ForEach(Array(todayPlannedTasks.prefix(2).enumerated()), id: \.element.id) { index, task in
                                 TimerCardContainer(
                                     task: task,
                                     isRunning: false,
+                                    isPaused: false,
                                     elapsedTime: 0,
                                     onStart: startPlannedTask,
                                     onStop: stopTimer,
-                                    tintColor: TimerCardContainer.cardTints[index % TimerCardContainer.cardTints.count]
+                                    onPause: pauseTimer,
+                                    onResume: resumeTimer,
+                                    tintColor: TimerCardContainer.cardTints[index % TimerCardContainer.cardTints.count],
+                                    isCompact: true
                                 )
-                                .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
-                                .listRowBackground(Color.clear)
-                                .listRowSeparator(.hidden)
                             }
+                        }
+                        .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
+
+                        // Remaining tasks (if any): full-width stack.
+                        ForEach(Array(todayPlannedTasks.dropFirst(2).enumerated()), id: \.element.id) { offset, task in
+                            let index = offset + 2
+                            TimerCardContainer(
+                                task: task,
+                                isRunning: false,
+                                isPaused: false,
+                                elapsedTime: 0,
+                                onStart: startPlannedTask,
+                                onStop: stopTimer,
+                                onPause: pauseTimer,
+                                onResume: resumeTimer,
+                                tintColor: TimerCardContainer.cardTints[index % TimerCardContainer.cardTints.count]
+                            )
+                            .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
+                            .listRowBackground(Color.clear)
+                            .listRowSeparator(.hidden)
                         }
                     } header: {
                         Text("Planned for Today")
@@ -176,7 +193,7 @@ struct TodayView: View {
                             .foregroundStyle(.primary)
                             .textCase(nil)
                     }
-                } else if timerEngine.isRunning == false {
+                } else if !hasActiveTimer {
                     EmptyTodayState()
                         .listRowBackground(Color.clear)
                         .listRowSeparator(.hidden)
@@ -191,7 +208,19 @@ struct TodayView: View {
             #endif
         }
         .onChange(of: titleInput) { _, newValue in
-            timerEngine.updateTitle(newValue)
+            titleUpdateTask?.cancel()
+            guard timerEngine.isRunning else { return }
+            titleUpdateTask = Task { @MainActor in
+                try? await Task.sleep(nanoseconds: 350_000_000)
+                guard !Task.isCancelled else { return }
+                timerEngine.updateTitle(newValue)
+            }
+        }
+        .onAppear {
+            titleInput = timerEngine.runningEntry?.title ?? ""
+        }
+        .onChange(of: timerEngine.runningEntry?.id) { _, _ in
+            titleInput = timerEngine.runningEntry?.title ?? ""
         }
     }
 
@@ -216,6 +245,14 @@ struct TodayView: View {
             project: task.project,
             sourcePlannedTask: task
         )
+    }
+
+    private func pauseTimer() {
+        timerEngine.pauseTimer()
+    }
+
+    private func resumeTimer() {
+        timerEngine.resumeTimer()
     }
 
     private func deleteEntry(_ entry: TimeEntry) {

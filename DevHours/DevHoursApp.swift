@@ -43,9 +43,13 @@ struct DevHoursApp: App {
         switch url.host {
         case "stop-timer":
             timerEngine.stopTimer()
-            SharedDataManager.shared.updateWidgetData()
+        case "pause-timer":
+            timerEngine.pauseTimer()
+        case "resume-timer":
+            timerEngine.resumeTimer()
         default:
             break
         }
+        SharedDataManager.shared.updateWidgetData()
     }
 }

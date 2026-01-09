@@ -17,8 +17,10 @@ struct WidgetTaskData: Codable, Identifiable {
 
 struct WidgetTimerData: Codable {
     let isRunning: Bool
+    let isPaused: Bool
     let title: String?
     let startTime: Date?
+    let elapsedAtPause: TimeInterval?  // Frozen elapsed time when paused
 }
 
 struct WidgetData: Codable {

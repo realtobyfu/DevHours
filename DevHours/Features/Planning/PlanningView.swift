@@ -22,6 +22,7 @@ struct PlanningView: View {
     @State private var selectedDate: Date = Date()
     @State private var showingAddSheet = false
     @State private var viewMode: PlanningViewMode = .calendar
+    @State private var widgetUpdateTask: Task<Void, Never>?
 
     // Filter out completed tasks for display
     private var activeTasks: [PlannedTask] {
@@ -78,6 +79,14 @@ struct PlanningView: View {
             }
             .sheet(isPresented: $showingAddSheet) {
                 PlannedTaskEditSheet(initialDate: selectedDate, existingTask: nil)
+            }
+        }
+        .onChange(of: allPlannedTasks) { _, _ in
+            widgetUpdateTask?.cancel()
+            widgetUpdateTask = Task { @MainActor in
+                try? await Task.sleep(nanoseconds: 300_000_000)
+                guard !Task.isCancelled else { return }
+                SharedDataManager.shared.updateWidgetData()
             }
         }
     }
@@ -180,6 +189,7 @@ struct PlanningView: View {
         }
         do {
             try modelContext.save()
+            SharedDataManager.shared.updateWidgetData()
         } catch {
             print("Error deleting planned task: \(error)")
         }
