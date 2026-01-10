@@ -25,6 +25,10 @@ final class SharedDataManager {
             RecurrenceRule.self,
             Tag.self,
             PauseInterval.self,
+            // Focus Mode models
+            FocusProfile.self,
+            FocusSession.self,
+            FocusStats.self,
         ])
         let config = ModelConfiguration(
             schema: schema,

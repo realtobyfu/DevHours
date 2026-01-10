@@ -18,6 +18,10 @@ struct EnhancedTimerCard: View {
     let onPause: () -> Void
     let onResume: () -> Void
 
+    // Focus Mode bindings
+    @Binding var focusModeEnabled: Bool
+    @Binding var selectedFocusProfile: FocusProfile?
+
     /// True if there's an active timer (running or paused)
     private var hasActiveTimer: Bool {
         isRunning || isPaused
@@ -25,6 +29,35 @@ struct EnhancedTimerCard: View {
 
     var body: some View {
         VStack(spacing: 20) {
+            // Focus Mode Toggle (only show when not running)
+            if !hasActiveTimer {
+                FocusToggleRow(
+                    isEnabled: $focusModeEnabled,
+                    selectedProfile: $selectedFocusProfile
+                )
+            } else if focusModeEnabled, let profile = selectedFocusProfile {
+                // Show active focus indicator when timer is running
+                HStack(spacing: 8) {
+                    Image(systemName: profile.iconName)
+                        .font(.subheadline)
+                    Text(profile.name)
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+//                    Text("Active")
+//                        .font(.caption)
+//                        .padding(.horizontal, 6)
+//                        .padding(.vertical, 2)
+//                        .background(Color.green.opacity(0.2))
+//                        .clipShape(Capsule())
+                }
+                .foregroundStyle(Color.fromHex(profile.colorHex))
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(
+                    Capsule()
+                        .fill(Color.fromHex(profile.colorHex).opacity(0.1))
+                )
+            }
             // Hero Timer Display (when running or paused)
             if hasActiveTimer {
                 VStack(spacing: 8) {

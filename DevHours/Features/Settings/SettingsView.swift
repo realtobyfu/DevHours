@@ -11,6 +11,11 @@ import UIKit
 #endif
 
 struct SettingsView: View {
+    @Environment(FocusBlockingService.self) private var focusService
+    @Environment(PremiumManager.self) private var premiumManager
+
+    @State private var showingOnboarding = false
+
     var body: some View {
         NavigationStack {
             List {
@@ -25,6 +30,63 @@ struct SettingsView: View {
                         TagsListView()
                     } label: {
                         Label("Manage Tags", systemImage: "tag")
+                    }
+                }
+
+                // Focus Mode Section
+                Section {
+                    if focusService.isAuthorized {
+                        NavigationLink {
+                            FocusProfilesView()
+                        } label: {
+                            Label("Focus Profiles", systemImage: "moon.fill")
+                        }
+
+                        NavigationLink {
+                            FocusStatsView()
+                        } label: {
+                            HStack {
+                                Label("Focus Statistics", systemImage: "chart.bar.fill")
+                                Spacer()
+                                if !premiumManager.isPremium {
+                                    Text("PRO")
+                                        .font(.caption2)
+                                        .fontWeight(.semibold)
+                                        .foregroundStyle(.white)
+                                        .padding(.horizontal, 6)
+                                        .padding(.vertical, 2)
+                                        .background(Color.orange)
+                                        .clipShape(Capsule())
+                                }
+                            }
+                        }
+
+                        // Default strictness picker
+                        Picker(selection: .constant(StrictnessLevel.firm)) {
+                            ForEach(StrictnessLevel.allCases, id: \.self) { level in
+                                Text(level.displayName).tag(level)
+                            }
+                        } label: {
+                            Label("Default Strictness", systemImage: "lock.fill")
+                        }
+                    } else {
+                        Button {
+                            showingOnboarding = true
+                        } label: {
+                            HStack {
+                                Label("Set Up Focus Mode", systemImage: "moon.fill")
+                                Spacer()
+                                Image(systemName: "chevron.right")
+                                    .font(.caption)
+                                    .foregroundStyle(.tertiary)
+                            }
+                        }
+                    }
+                } header: {
+                    Text("Focus Mode")
+                } footer: {
+                    if !focusService.isAuthorized {
+                        Text("Block distracting apps while you work. Requires Screen Time permission.")
                     }
                 }
 
@@ -49,11 +111,32 @@ struct SettingsView: View {
                         }
                     }
                 }
+
+                #if DEBUG
+                Section {
+                    Toggle(isOn: Binding(
+                        get: { premiumManager.isPremium },
+                        set: { premiumManager.isPremium = $0 }
+                    )) {
+                        Label("Premium Mode", systemImage: "star.fill")
+                    }
+                    .tint(.orange)
+                } header: {
+                    Text("Debug")
+                } footer: {
+                    Text("Toggle to test premium features. This only appears in debug builds.")
+                }
+                #endif
             }
             .navigationTitle("Settings")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.large)
             #endif
+            .sheet(isPresented: $showingOnboarding) {
+                FocusOnboardingView {
+                    // Onboarding complete
+                }
+            }
         }
     }
 

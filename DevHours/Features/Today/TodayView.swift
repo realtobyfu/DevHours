@@ -11,6 +11,8 @@ import SwiftData
 struct TodayView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(TimerEngine.self) private var timerEngine
+    @Environment(FocusBlockingService.self) private var focusService
+    @Environment(PremiumManager.self) private var premiumManager
 
     // Query all entries, then filter for today in Swift code
     @Query(sort: \TimeEntry.startTime, order: .reverse)
@@ -22,6 +24,11 @@ struct TodayView: View {
 
     @State private var titleInput = ""
     @State private var titleUpdateTask: Task<Void, Never>?
+
+    // Focus Mode state
+    @State private var focusModeEnabled = false
+    @State private var selectedFocusProfile: FocusProfile?
+    @State private var showingFocusSuggestion = false
 
     // Filter for today's entries (Calendar methods not supported in @Query predicates)
     private var todayEntries: [TimeEntry] {
@@ -104,7 +111,9 @@ struct TodayView: View {
                         onStart: startTimer,
                         onStop: stopTimer,
                         onPause: pauseTimer,
-                        onResume: resumeTimer
+                        onResume: resumeTimer,
+                        focusModeEnabled: $focusModeEnabled,
+                        selectedFocusProfile: $selectedFocusProfile
                     )
                     .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
                     .listRowBackground(Color.clear)
@@ -227,12 +236,26 @@ struct TodayView: View {
     // MARK: - Actions
     private func startTimer() {
         timerEngine.startTimer(title: titleInput)
+
+        // Start focus blocking if enabled
+        if focusModeEnabled, let profile = selectedFocusProfile {
+            if let entryId = timerEngine.runningEntry?.id {
+                focusService.startBlocking(profile: profile, linkedTimeEntryId: entryId)
+            }
+        }
+
         // Keep titleInput so user can continue editing while timer runs
     }
 
     private func stopTimer() {
+        // Stop focus blocking if active
+        if focusService.isBlocking {
+            focusService.stopBlocking(successful: true)
+        }
+
         timerEngine.stopTimer()
         titleInput = ""  // Clear after stopping
+        focusModeEnabled = false  // Reset for next session
     }
 
     private func startPlannedTask(_ task: PlannedTask) {
