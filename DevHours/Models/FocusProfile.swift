@@ -36,15 +36,15 @@ enum StrictnessLevel: String, Codable, CaseIterable {
 
 @Model
 final class FocusProfile {
-    var id: UUID
-    var name: String
-    var iconName: String  // SF Symbol name
-    var colorHex: String
-    var strictnessLevel: StrictnessLevel
+    var id: UUID = UUID()
+    var name: String = ""
+    var iconName: String = ""  // SF Symbol name
+    var colorHex: String = ""
+    var strictnessLevel: StrictnessLevel = StrictnessLevel.firm
     var customShieldMessage: String?
-    var isDefault: Bool  // Pre-built profiles
-    var sortOrder: Int
-    var createdAt: Date
+    var isDefault: Bool = false  // Pre-built profiles
+    var sortOrder: Int = 0
+    var createdAt: Date = Date.now
 
     // Store FamilyActivitySelection as encoded Data
     // This allows SwiftData to persist the selection
@@ -52,7 +52,7 @@ final class FocusProfile {
 
     // Relationship to sessions
     @Relationship(deleteRule: .nullify)
-    var sessions: [FocusSession] = []
+    var sessions: [FocusSession]?
 
     init(
         name: String,

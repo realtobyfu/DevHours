@@ -27,11 +27,13 @@ enum RecurrenceFrequency: String, Codable, CaseIterable {
 
 @Model
 final class RecurrenceRule {
-    var id: UUID
-    var frequency: String  // Stored as raw value of RecurrenceFrequency
-    var interval: Int      // Every N days/weeks/months (default 1)
+    var id: UUID = UUID()
+    var frequency: String = RecurrenceFrequency.daily.rawValue  // Stored as raw value of RecurrenceFrequency
+    var interval: Int = 1      // Every N days/weeks/months (default 1)
     var endDate: Date?     // nil = never ends
-    var createdAt: Date
+    var createdAt: Date = Date.now
+
+    var plannedTask: PlannedTask?
 
     /// Convenience accessor for frequency enum
     var frequencyType: RecurrenceFrequency? {

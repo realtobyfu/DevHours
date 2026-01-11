@@ -10,21 +10,21 @@ import SwiftData
 
 @Model
 final class Project {
-    var id: UUID
-    var name: String
-    var createdAt: Date
-    var isBillable: Bool
+    var id: UUID = UUID()
+    var name: String = ""
+    var createdAt: Date = Date.now
+    var isBillable: Bool = true
 
     // Relationship: many projects belong to one client
     var client: Client?
 
     // Relationship: one project has many time entries
     @Relationship(deleteRule: .nullify, inverse: \TimeEntry.project)
-    var timeEntries: [TimeEntry] = []
+    var timeEntries: [TimeEntry]?
 
     // Relationship: one project has many planned tasks
     @Relationship(deleteRule: .nullify, inverse: \PlannedTask.project)
-    var plannedTasks: [PlannedTask] = []
+    var plannedTasks: [PlannedTask]?
 
     init(name: String, client: Client? = nil, isBillable: Bool = true) {
         self.id = UUID()

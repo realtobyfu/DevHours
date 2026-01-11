@@ -31,19 +31,12 @@ final class SharedDataManager {
             FocusStats.self,
         ])
 
-        // Enable CloudKit on iOS; avoid it on macOS where the schema isn't CloudKit-ready.
-        #if os(macOS)
-        let config = ModelConfiguration(
-            schema: schema,
-            groupContainer: .identifier(Self.appGroupIdentifier)
-        )
-        #else
+        // CloudKit integration requires a fully CloudKit-ready schema.
         let config = ModelConfiguration(
             schema: schema,
             groupContainer: .identifier(Self.appGroupIdentifier),
             cloudKitDatabase: .automatic
         )
-        #endif
         do {
             return try ModelContainer(for: schema, configurations: [config])
         } catch {
@@ -76,7 +69,7 @@ final class SharedDataManager {
         let descriptor = FetchDescriptor<TimeEntry>(predicate: #Predicate { $0.endTime == nil })
         if let running = try? modelContext.fetch(descriptor).first {
             // If paused, close the open pause interval first
-            if let currentPause = running.pauseIntervals.last,
+            if let currentPause = (running.pauseIntervals ?? []).last,
                currentPause.resumedAt == nil {
                 currentPause.resumedAt = .now
             }
@@ -100,7 +93,9 @@ final class SharedDataManager {
 
         let pauseInterval = PauseInterval(pausedAt: .now)
         pauseInterval.timeEntry = running
-        running.pauseIntervals.append(pauseInterval)
+        var intervals = running.pauseIntervals ?? []
+        intervals.append(pauseInterval)
+        running.pauseIntervals = intervals
         modelContext.insert(pauseInterval)
         try? modelContext.save()
     }
@@ -108,7 +103,7 @@ final class SharedDataManager {
     func resumeTimer() {
         let descriptor = FetchDescriptor<TimeEntry>(predicate: #Predicate { $0.endTime == nil })
         guard let running = try? modelContext.fetch(descriptor).first,
-              let currentPause = running.pauseIntervals.last,
+              let currentPause = (running.pauseIntervals ?? []).last,
               currentPause.resumedAt == nil else { return }
 
         currentPause.resumedAt = .now

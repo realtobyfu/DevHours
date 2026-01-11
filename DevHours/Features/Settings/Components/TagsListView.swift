@@ -106,7 +106,7 @@ struct TagRow: View {
                 Text(tag.name)
                     .font(.headline)
 
-                Text("\(tag.timeEntries.count) entries")
+                Text("\((tag.timeEntries ?? []).count) entries")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

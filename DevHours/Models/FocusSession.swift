@@ -10,13 +10,13 @@ import SwiftData
 
 @Model
 final class FocusSession {
-    var id: UUID
-    var startTime: Date
+    var id: UUID = UUID()
+    var startTime: Date = Date.now
     var endTime: Date?
     var plannedDuration: TimeInterval?  // Target duration (nil = open-ended)
-    var overrideCount: Int  // How many times user unlocked blocked apps
-    var completedSuccessfully: Bool  // Ended naturally vs cancelled early
-    var createdAt: Date
+    var overrideCount: Int = 0  // How many times user unlocked blocked apps
+    var completedSuccessfully: Bool = false  // Ended naturally vs cancelled early
+    var createdAt: Date = Date.now
 
     // Relationship to profile used
     @Relationship(deleteRule: .nullify, inverse: \FocusProfile.sessions)

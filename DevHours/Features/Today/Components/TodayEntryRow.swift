@@ -74,8 +74,9 @@ struct TodayEntryRow: View {
             }
 
             // Tags (if any) - compact style for today view
-            if !entry.tags.isEmpty {
-                TagsFlowView(tags: entry.tags, compact: true)
+            let tags = entry.tags ?? []
+            if !tags.isEmpty {
+                TagsFlowView(tags: tags, compact: true)
             }
         }
         .padding(16)

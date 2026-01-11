@@ -10,11 +10,10 @@ import SwiftData
 
 @Model
 final class PauseInterval {
-    var id: UUID
-    var pausedAt: Date
+    var id: UUID = UUID()
+    var pausedAt: Date = Date.now
     var resumedAt: Date?  // nil = currently paused
 
-    @Relationship(inverse: \TimeEntry.pauseIntervals)
     var timeEntry: TimeEntry?
 
     /// Duration of this pause interval

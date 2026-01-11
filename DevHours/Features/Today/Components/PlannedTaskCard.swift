@@ -29,8 +29,9 @@ struct PlannedTaskCard: View {
 
                     Spacer(minLength: 8)
 
-                    if !task.tags.isEmpty {
-                        TagsFlowView(tags: task.tags, compact: true)
+                    let tags = task.tags ?? []
+                    if !tags.isEmpty {
+                        TagsFlowView(tags: tags, compact: true)
                     }
                 }
 

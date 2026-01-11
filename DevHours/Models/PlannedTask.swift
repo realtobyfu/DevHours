@@ -10,28 +10,28 @@ import SwiftData
 
 @Model
 final class PlannedTask {
-    var id: UUID
-    var title: String
-    var plannedDate: Date
-    var estimatedDuration: TimeInterval  // in seconds
-    var createdAt: Date
-    var isCompleted: Bool
+    var id: UUID = UUID()
+    var title: String = ""
+    var plannedDate: Date = Date.now
+    var estimatedDuration: TimeInterval = 0  // in seconds
+    var createdAt: Date = Date.now
+    var isCompleted: Bool = false
     var completedAt: Date?
 
     // Relationships
     var project: Project?
+    @Relationship(deleteRule: .nullify, inverse: \RecurrenceRule.plannedTask)
     var recurrenceRule: RecurrenceRule?
 
     // For recurring task instances: links back to the parent task
     var parentTaskId: UUID?
 
     // Link to time entries created when this task is worked on (supports multiple sessions)
-    @Relationship(deleteRule: .nullify)
-    var linkedTimeEntries: [TimeEntry] = []
+    var linkedTimeEntries: [TimeEntry]?
 
     // Tags for categorization (many-to-many)
     @Relationship(deleteRule: .nullify, inverse: \Tag.plannedTasks)
-    var tags: [Tag] = []
+    var tags: [Tag]?
 
     // Computed properties
     var isToday: Bool {
@@ -44,7 +44,7 @@ final class PlannedTask {
 
     /// Total time worked on this task across all sessions
     var workedDuration: TimeInterval {
-        linkedTimeEntries.reduce(0) { $0 + $1.duration }
+        (linkedTimeEntries ?? []).reduce(0) { $0 + $1.duration }
     }
 
     /// Remaining time until estimated duration is reached
@@ -85,8 +85,8 @@ final class PlannedTask {
         self.parentTaskId = parentTaskId
         self.isCompleted = false
         self.completedAt = nil
-        self.linkedTimeEntries = []
-        self.tags = tags
+        self.linkedTimeEntries = nil
+        self.tags = tags.isEmpty ? nil : tags
         self.createdAt = Date.now
     }
 }

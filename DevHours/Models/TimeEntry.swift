@@ -10,10 +10,10 @@ import SwiftData
 
 @Model
 final class TimeEntry {
-    var id: UUID
-    var startTime: Date
+    var id: UUID = UUID()
+    var startTime: Date = Date.now
     var endTime: Date?  // nil = timer still running (critical for persistence!)
-    var title: String
+    var title: String = ""
 
     // Relationships (optional for MVP Timer phase, but defined for future)
     var client: Client?
@@ -25,22 +25,22 @@ final class TimeEntry {
 
     // Tags for categorization (many-to-many)
     @Relationship(deleteRule: .nullify, inverse: \Tag.timeEntries)
-    var tags: [Tag] = []
+    var tags: [Tag]?
 
     // Pause intervals for this timer (supports pause/resume functionality)
-    @Relationship(deleteRule: .cascade)
-    var pauseIntervals: [PauseInterval] = []
+    @Relationship(deleteRule: .cascade, inverse: \PauseInterval.timeEntry)
+    var pauseIntervals: [PauseInterval]?
 
     /// Whether the timer is currently paused (running but time frozen)
     var isPaused: Bool {
         guard endTime == nil else { return false }  // Stopped timers aren't paused
-        guard let lastPause = pauseIntervals.last else { return false }
+        guard let lastPause = (pauseIntervals ?? []).last else { return false }
         return lastPause.resumedAt == nil
     }
 
     /// Total duration of all pause intervals
     var totalPausedDuration: TimeInterval {
-        pauseIntervals.reduce(0.0) { result, interval in
+        (pauseIntervals ?? []).reduce(0.0) { result, interval in
             result + interval.duration
         }
     }

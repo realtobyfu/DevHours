@@ -10,22 +10,22 @@ import SwiftData
 
 @Model
 final class FocusStats {
-    var id: UUID
-    var currentStreak: Int
-    var longestStreak: Int
-    var totalFocusSeconds: Int
-    var totalSessionsCompleted: Int
-    var totalOverrides: Int  // Lifetime override count
+    var id: UUID = UUID()
+    var currentStreak: Int = 0
+    var longestStreak: Int = 0
+    var totalFocusSeconds: Int = 0
+    var totalSessionsCompleted: Int = 0
+    var totalOverrides: Int = 0  // Lifetime override count
     var lastSuccessfulDate: Date?
-    var weeklyGoalMinutes: Int
-    var createdAt: Date
+    var weeklyGoalMinutes: Int = 300
+    var createdAt: Date = Date.now
 
     // Achievement IDs that have been unlocked
-    var unlockedAchievements: [String]
+    var unlockedAchievements: [String] = []
 
     // Weekly session count for free tier limiting
-    var weeklySessionCount: Int
-    var weekStartDate: Date
+    var weeklySessionCount: Int = 0
+    var weekStartDate: Date = FocusStats.startOfWeek()
 
     init() {
         self.id = UUID()

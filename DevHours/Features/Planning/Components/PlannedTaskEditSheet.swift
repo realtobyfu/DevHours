@@ -151,7 +151,7 @@ struct PlannedTaskEditSheet: View {
             selectedProject = task.project
             recurrenceFrequency = task.recurrenceRule?.frequencyType
             recurrenceEndDate = task.recurrenceRule?.endDate
-            selectedTags = task.tags
+            selectedTags = task.tags ?? []
         } else {
             plannedDate = initialDate
         }
@@ -170,7 +170,7 @@ struct PlannedTaskEditSheet: View {
             task.plannedDate = normalizedDate
             task.estimatedDuration = estimatedDuration
             task.project = selectedProject
-            task.tags = selectedTags
+            task.tags = selectedTags.isEmpty ? nil : selectedTags
 
             // Update recurrence rule if this is a recurring parent
             if task.isRecurringParent {

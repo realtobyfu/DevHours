@@ -76,8 +76,9 @@ struct EntryRow: View {
             }
 
             // Tags (if any)
-            if !entry.tags.isEmpty {
-                TagsFlowView(tags: entry.tags)
+            let tags = entry.tags ?? []
+            if !tags.isEmpty {
+                TagsFlowView(tags: tags)
             }
         }
         .padding(16)

@@ -70,7 +70,9 @@ final class TimerEngine {
         // Link to planned task if provided
         if let task = sourcePlannedTask {
             entry.sourcePlannedTask = task
-            task.linkedTimeEntries.append(entry)
+            var entries = task.linkedTimeEntries ?? []
+            entries.append(entry)
+            task.linkedTimeEntries = entries
         }
 
         try? modelContext.save()
@@ -89,7 +91,7 @@ final class TimerEngine {
         guard let entry = runningEntry else { return }
 
         // If paused, close the open pause interval first
-        if let currentPause = entry.pauseIntervals.last,
+        if let currentPause = (entry.pauseIntervals ?? []).last,
            currentPause.resumedAt == nil {
             currentPause.resumedAt = Date.now
         }
@@ -123,7 +125,9 @@ final class TimerEngine {
 
         let pauseInterval = PauseInterval(pausedAt: Date.now)
         pauseInterval.timeEntry = entry
-        entry.pauseIntervals.append(pauseInterval)
+        var intervals = entry.pauseIntervals ?? []
+        intervals.append(pauseInterval)
+        entry.pauseIntervals = intervals
         modelContext.insert(pauseInterval)
 
         try? modelContext.save()
@@ -140,7 +144,7 @@ final class TimerEngine {
 
     func resumeTimer() {
         guard let entry = runningEntry,
-              let currentPause = entry.pauseIntervals.last,
+              let currentPause = (entry.pauseIntervals ?? []).last,
               currentPause.resumedAt == nil else { return }
 
         currentPause.resumedAt = Date.now

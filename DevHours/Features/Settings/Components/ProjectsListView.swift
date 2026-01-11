@@ -105,7 +105,7 @@ struct ProjectRow: View {
                             .foregroundStyle(.green)
                     }
 
-                    Text("\(project.timeEntries.count) entries")
+                    Text("\((project.timeEntries ?? []).count) entries")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }

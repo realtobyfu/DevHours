@@ -131,7 +131,13 @@ struct EntryEditSheet: View {
                             }
                         }
                     } else {
-                        TagMultiSelectView(allTags: allTags, selectedTags: $entry.tags)
+                        TagMultiSelectView(
+                            allTags: allTags,
+                            selectedTags: Binding(
+                                get: { entry.tags ?? [] },
+                                set: { entry.tags = $0.isEmpty ? nil : $0 }
+                            )
+                        )
                     }
                 } header: {
                     Text("Tags")

@@ -10,16 +10,16 @@ import SwiftData
 
 @Model
 final class Tag {
-    var id: UUID
-    var name: String
-    var colorHex: String  // Stored as hex string (e.g., "#E53935")
-    var createdAt: Date
+    var id: UUID = UUID()
+    var name: String = ""
+    var colorHex: String = ""  // Stored as hex string (e.g., "#E53935")
+    var createdAt: Date = Date.now
 
     // Relationship to time entries (many-to-many)
-    var timeEntries: [TimeEntry] = []
+    var timeEntries: [TimeEntry]?
 
     // Relationship to planned tasks (many-to-many)
-    var plannedTasks: [PlannedTask] = []
+    var plannedTasks: [PlannedTask]?
 
     init(name: String, colorHex: String) {
         self.id = UUID()

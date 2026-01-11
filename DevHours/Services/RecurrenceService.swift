@@ -181,7 +181,7 @@ final class RecurrenceService {
             estimatedDuration: parent.estimatedDuration,
             project: parent.project,
             parentTaskId: parent.id,
-            tags: parent.tags
+            tags: parent.tags ?? []
         )
         modelContext.insert(instance)
     }

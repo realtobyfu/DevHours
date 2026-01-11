@@ -10,17 +10,17 @@ import SwiftData
 
 @Model
 final class Client {
-    var id: UUID
-    var name: String
-    var createdAt: Date
+    var id: UUID = UUID()
+    var name: String = ""
+    var createdAt: Date = Date.now
 
     // Relationship: one client has many projects
     @Relationship(deleteRule: .cascade, inverse: \Project.client)
-    var projects: [Project] = []
+    var projects: [Project]?
 
     // Relationship: one client has many time entries
     @Relationship(deleteRule: .nullify, inverse: \TimeEntry.client)
-    var timeEntries: [TimeEntry] = []
+    var timeEntries: [TimeEntry]?
 
     init(name: String) {
         self.id = UUID()
