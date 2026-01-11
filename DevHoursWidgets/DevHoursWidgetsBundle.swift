@@ -13,6 +13,8 @@ struct DevHoursWidgetsBundle: WidgetBundle {
     var body: some Widget {
         TodayTasksWidget()
         TimerWidget()
+        #if !os(macOS)
         TimerLiveActivity()
+        #endif
     }
 }

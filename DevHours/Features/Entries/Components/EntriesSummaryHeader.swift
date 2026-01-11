@@ -45,7 +45,8 @@ struct EntriesSummaryHeader: View {
                 }
             }
         }
-        .padding(16)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
         .background(
             RoundedRectangle(cornerRadius: 12)
                 .fill(Color.secondarySystemBackground)

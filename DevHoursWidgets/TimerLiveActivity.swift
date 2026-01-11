@@ -5,6 +5,7 @@
 //  Live Activity UI for timer tracking on Lock Screen and Dynamic Island.
 //
 
+#if !os(macOS)
 import ActivityKit
 import SwiftUI
 import WidgetKit
@@ -120,7 +121,7 @@ struct LockScreenView: View {
 
                 Text(context.state.taskTitle.isEmpty ? "Timer" : context.state.taskTitle)
                     .font(.headline)
-                    .lineLimit(2)
+                    .lineLimit(1)
                     .truncationMode(.tail)
 
                 if let projectName = context.state.projectName, !projectName.isEmpty {
@@ -129,24 +130,27 @@ struct LockScreenView: View {
                         .foregroundStyle(.secondary)
                 }
             }
-            .layoutPriority(1)
+            .layoutPriority(0)
 
             Spacer()
 
             // Center: Timer display (frozen when paused)
-            if context.state.isPaused, let elapsed = context.state.elapsedAtPause {
-                Text(DurationFormatter.formatHoursMinutesSeconds(elapsed))
-                    .font(.system(size: 32, weight: .medium, design: .rounded))
-                    .monospacedDigit()
-                    .foregroundStyle(.secondary)
-                    .frame(minWidth: 72, alignment: .trailing)
-            } else {
-                Text(context.state.startTime, style: .timer)
-                    .font(.system(size: 32, weight: .medium, design: .rounded))
-                    .monospacedDigit()
-                    .foregroundStyle(.primary)
-                    .frame(minWidth: 72, alignment: .trailing)
+            Group {
+                if context.state.isPaused, let elapsed = context.state.elapsedAtPause {
+                    Text(DurationFormatter.formatHoursMinutesSeconds(elapsed))
+                        .font(.system(size: 32, weight: .medium, design: .rounded))
+                        .monospacedDigit()
+                        .foregroundStyle(.secondary)
+                        .frame(minWidth: 72, alignment: .trailing)
+                } else {
+                    Text(context.state.startTime, style: .timer)
+                        .font(.system(size: 32, weight: .medium, design: .rounded))
+                        .monospacedDigit()
+                        .foregroundStyle(.primary)
+                        .frame(minWidth: 72, alignment: .trailing)
+                }
             }
+            .layoutPriority(1)
 
             // Right: Control buttons
             HStack(spacing: 8) {
@@ -189,50 +193,51 @@ struct LockScreenView: View {
     )
 }
 
-#Preview("Lock Screen - Paused", as: .content, using: TimerActivityAttributes(
-    taskTitle: "Working on feature",
-    projectName: "DevHours App"
-)) {
-    TimerLiveActivity()
-} contentStates: {
-    TimerActivityAttributes.ContentState(
-        startTime: Date().addingTimeInterval(-3723),
-        isRunning: false,
-        isPaused: true,
-        elapsedAtPause: 3723,
-        taskTitle: "Working on feature",
-        projectName: "DevHours App"
-    )
-}
-
-#Preview("Dynamic Island Compact", as: .dynamicIsland(.compact), using: TimerActivityAttributes(
-    taskTitle: "Working on feature",
-    projectName: "DevHours App"
-)) {
-    TimerLiveActivity()
-} contentStates: {
-    TimerActivityAttributes.ContentState(
-        startTime: Date().addingTimeInterval(-3723),
-        isRunning: true,
-        isPaused: false,
-        elapsedAtPause: nil,
-        taskTitle: "Working on feature",
-        projectName: "DevHours App"
-    )
-}
-
-#Preview("Dynamic Island Expanded", as: .dynamicIsland(.expanded), using: TimerActivityAttributes(
-    taskTitle: "Working on feature",
-    projectName: "DevHours App"
-)) {
-    TimerLiveActivity()
-} contentStates: {
-    TimerActivityAttributes.ContentState(
-        startTime: Date().addingTimeInterval(-3723),
-        isRunning: true,
-        isPaused: false,
-        elapsedAtPause: nil,
-        taskTitle: "Working on feature",
-        projectName: "DevHours App"
-    )
-}
+//#Preview("Lock Screen - Paused", as: .content, using: TimerActivityAttributes(
+//    taskTitle: "Working on feature",
+//    projectName: "DevHours App"
+//)) {
+//    TimerLiveActivity()
+//} contentStates: {
+//    TimerActivityAttributes.ContentState(
+//        startTime: Date().addingTimeInterval(-3723),
+//        isRunning: false,
+//        isPaused: true,
+//        elapsedAtPause: 3723,
+//        taskTitle: "Working on feature",
+//        projectName: "DevHours App"
+//    )
+//}
+//
+//#Preview("Dynamic Island Compact", as: .dynamicIsland(.compact), using: TimerActivityAttributes(
+//    taskTitle: "Working on feature",
+//    projectName: "DevHours App"
+//)) {
+//    TimerLiveActivity()
+//} contentStates: {
+//    TimerActivityAttributes.ContentState(
+//        startTime: Date().addingTimeInterval(-3723),
+//        isRunning: true,
+//        isPaused: false,
+//        elapsedAtPause: nil,
+//        taskTitle: "Working on feature",
+//        projectName: "DevHours App"
+//    )
+//}
+//
+//#Preview("Dynamic Island Expanded", as: .dynamicIsland(.expanded), using: TimerActivityAttributes(
+//    taskTitle: "Working on feature",
+//    projectName: "DevHours App"
+//)) {
+//    TimerLiveActivity()
+//} contentStates: {
+//    TimerActivityAttributes.ContentState(
+//        startTime: Date().addingTimeInterval(-3723),
+//        isRunning: true,
+//        isPaused: false,
+//        elapsedAtPause: nil,
+//        taskTitle: "Working on feature",
+//        projectName: "DevHours App"
+//    )
+//}
+#endif

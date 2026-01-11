@@ -51,7 +51,11 @@ struct DurationPickerView: View {
                             Text("\(hour) hr").tag(hour)
                         }
                     }
+                    #if os(iOS)
                     .pickerStyle(.wheel)
+                    #else
+                    .pickerStyle(.menu)
+                    #endif
                     .frame(width: 100)
                     .clipped()
 
@@ -60,11 +64,17 @@ struct DurationPickerView: View {
                             Text("\(minute) min").tag(minute)
                         }
                     }
+                    #if os(iOS)
                     .pickerStyle(.wheel)
+                    #else
+                    .pickerStyle(.menu)
+                    #endif
                     .frame(width: 100)
                     .clipped()
                 }
+                #if os(iOS)
                 .frame(height: 120)
+                #endif
             } label: {
                 Text(DurationFormatter.formatHoursMinutes(duration))
                     .font(.body)

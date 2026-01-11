@@ -33,7 +33,8 @@ struct SettingsView: View {
                     }
                 }
 
-                // Focus Mode Section
+                #if !os(macOS)
+                // Focus Mode Section (iOS only - uses FamilyControls API)
                 Section {
                     if focusService.isAuthorized {
                         NavigationLink {
@@ -89,6 +90,7 @@ struct SettingsView: View {
                         Text("Block distracting apps while you work. Requires Screen Time permission.")
                     }
                 }
+                #endif
 
                 Section("About") {
                     HStack {
@@ -115,16 +117,26 @@ struct SettingsView: View {
                 #if DEBUG
                 Section {
                     Toggle(isOn: Binding(
-                        get: { premiumManager.isPremium },
-                        set: { premiumManager.isPremium = $0 }
+                        get: { premiumManager.debugOverridePremium },
+                        set: { premiumManager.debugOverridePremium = $0 }
                     )) {
                         Label("Premium Mode", systemImage: "star.fill")
                     }
                     .tint(.orange)
+
+                    Button {
+                        AppOnboardingView.hasCompletedOnboarding = false
+                        #if !os(macOS)
+                        FocusOnboardingView.hasCompletedOnboarding = false
+                        #endif
+                        UserDefaults.standard.removeObject(forKey: "focusAuthorizationStatus")
+                    } label: {
+                        Label("Reset Onboarding", systemImage: "arrow.counterclockwise")
+                    }
                 } header: {
                     Text("Debug")
                 } footer: {
-                    Text("Toggle to test premium features. This only appears in debug builds.")
+                    Text("Debug options for testing. Restart app after resetting onboarding.")
                 }
                 #endif
             }
@@ -132,11 +144,13 @@ struct SettingsView: View {
             #if os(iOS)
             .navigationBarTitleDisplayMode(.large)
             #endif
+            #if !os(macOS)
             .sheet(isPresented: $showingOnboarding) {
                 FocusOnboardingView {
                     // Onboarding complete
                 }
             }
+            #endif
         }
     }
 

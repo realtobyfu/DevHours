@@ -35,6 +35,16 @@ struct EntriesView: View {
         return results
     }
 
+    // Group entries by date
+    private var groupedEntries: [(date: Date, entries: [TimeEntry])] {
+        let calendar = Calendar.current
+        let grouped = Dictionary(grouping: filteredEntries) { entry in
+            calendar.startOfDay(for: entry.startTime)
+        }
+        return grouped.sorted { $0.key > $1.key }
+            .map { (date: $0.key, entries: $0.value) }
+    }
+
     // Summary computed properties
     private var totalDuration: TimeInterval {
         filteredEntries.reduce(0) { $0 + $1.duration }
@@ -58,58 +68,18 @@ struct EntriesView: View {
                     .listRowSeparator(.hidden)
                 }
 
-                // Entry List Section
+                // Entry List grouped by date
                 if filteredEntries.isEmpty {
-                    VStack(spacing: 16) {
-                        Image(systemName: "clock.arrow.circlepath")
-                            .font(.system(size: 48))
-                            .foregroundStyle(.tertiary)
-
-                        VStack(spacing: 4) {
-                            Text(allEntries.isEmpty ? "No time entries yet" : "No matching entries")
-                                .font(.headline)
-                                .foregroundStyle(.primary)
-
-                            Text(allEntries.isEmpty ? "Start tracking in the Today tab" : "Try adjusting your search")
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 60)
-                    .listRowBackground(Color.clear)
-                    .listRowSeparator(.hidden)
+                    emptyStateView
                 } else {
-                    ForEach(filteredEntries) { entry in
-                        EntryRow(entry: entry)
-                            .contentShape(Rectangle())
-                            .onTapGesture {
-                                selectedEntry = entry
-                                showEditSheet = true
+                    ForEach(groupedEntries, id: \.date) { group in
+                        Section {
+                            ForEach(group.entries) { entry in
+                                entryRowView(for: entry)
                             }
-                            .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
-                            .listRowBackground(Color.clear)
-                            .listRowSeparator(.hidden)
-                            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                                Button(role: .destructive) {
-                                    deleteEntry(entry)
-                                } label: {
-                                    Label("Delete", systemImage: "trash")
-                                }
-                            }
-                            .contextMenu {
-                                Button {
-                                    selectedEntry = entry
-                                    showEditSheet = true
-                                } label: {
-                                    Label("Edit", systemImage: "pencil")
-                                }
-                                Button(role: .destructive) {
-                                    deleteEntry(entry)
-                                } label: {
-                                    Label("Delete", systemImage: "trash")
-                                }
-                            }
+                        } header: {
+                            DateSectionHeader(date: group.date, entryCount: group.entries.count)
+                        }
                     }
                 }
             }
@@ -131,6 +101,64 @@ struct EntriesView: View {
         }
     }
 
+    // MARK: - Subviews
+
+    private var emptyStateView: some View {
+        VStack(spacing: 16) {
+            Image(systemName: "clock.arrow.circlepath")
+                .font(.system(size: 48))
+                .foregroundStyle(.tertiary)
+
+            VStack(spacing: 4) {
+                Text(allEntries.isEmpty ? "No time entries yet" : "No matching entries")
+                    .font(.headline)
+                    .foregroundStyle(.primary)
+
+                Text(allEntries.isEmpty ? "Start tracking in the Today tab" : "Try adjusting your search")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 60)
+        .listRowBackground(Color.clear)
+        .listRowSeparator(.hidden)
+    }
+
+    private func entryRowView(for entry: TimeEntry) -> some View {
+        EntryRow(entry: entry)
+            .contentShape(Rectangle())
+            .onTapGesture {
+                selectedEntry = entry
+                showEditSheet = true
+            }
+            .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
+            .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
+            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                Button(role: .destructive) {
+                    deleteEntry(entry)
+                } label: {
+                    Label("Delete", systemImage: "trash")
+                }
+            }
+            .contextMenu {
+                Button {
+                    selectedEntry = entry
+                    showEditSheet = true
+                } label: {
+                    Label("Edit", systemImage: "pencil")
+                }
+                Button(role: .destructive) {
+                    deleteEntry(entry)
+                } label: {
+                    Label("Delete", systemImage: "trash")
+                }
+            }
+    }
+
+    // MARK: - Actions
+
     private func deleteEntry(_ entry: TimeEntry) {
         modelContext.delete(entry)
         do {
@@ -140,5 +168,54 @@ struct EntriesView: View {
         }
         showEditSheet = false
         selectedEntry = nil
+    }
+}
+
+// MARK: - Date Section Header
+
+private struct DateSectionHeader: View {
+    let date: Date
+    let entryCount: Int
+
+    var body: some View {
+        HStack {
+            Text(formatSectionDate(date))
+                .font(.subheadline)
+                .fontWeight(.semibold)
+                .foregroundStyle(.primary)
+
+            Spacer()
+
+            Text("\(entryCount) \(entryCount == 1 ? "entry" : "entries")")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+//        .padding(.vertical, 4)
+        .textCase(nil)
+    }
+
+    private func formatSectionDate(_ date: Date) -> String {
+        let calendar = Calendar.current
+
+        if calendar.isDateInToday(date) {
+            return "Today"
+        } else if calendar.isDateInYesterday(date) {
+            return "Yesterday"
+        } else if calendar.isDate(date, equalTo: Date(), toGranularity: .weekOfYear) {
+            // This week - show day name
+            let formatter = DateFormatter()
+            formatter.dateFormat = "EEEE"
+            return formatter.string(from: date)
+        } else if calendar.isDate(date, equalTo: Date(), toGranularity: .year) {
+            // This year - show month and day
+            let formatter = DateFormatter()
+            formatter.dateFormat = "EEEE, MMM d"
+            return formatter.string(from: date)
+        } else {
+            // Different year - show full date
+            let formatter = DateFormatter()
+            formatter.dateFormat = "EEEE, MMM d, yyyy"
+            return formatter.string(from: date)
+        }
     }
 }

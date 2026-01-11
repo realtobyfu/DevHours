@@ -8,9 +8,12 @@
 import Foundation
 import SwiftData
 import Observation
+#if !os(macOS)
 import FamilyControls
 import ManagedSettings
+#endif
 
+#if !os(macOS)
 @Observable
 final class FocusBlockingService {
     // MARK: - State
@@ -38,17 +41,39 @@ final class FocusBlockingService {
 
     // MARK: - Authorization
 
+    // UserDefaults key for caching authorization status
+    private static let authStatusKey = "focusAuthorizationStatus"
+
     /// Check current authorization status
     func checkAuthorizationStatus() {
-        switch center.authorizationStatus {
+        let systemStatus = center.authorizationStatus
+
+        switch systemStatus {
         case .notDetermined:
             authorizationStatus = .notDetermined
         case .approved:
             authorizationStatus = .approved
+            // Cache the approved status
+            UserDefaults.standard.set(AuthorizationStatus.approved.rawValue, forKey: Self.authStatusKey)
         case .denied:
             authorizationStatus = .denied
+            UserDefaults.standard.set(AuthorizationStatus.denied.rawValue, forKey: Self.authStatusKey)
         @unknown default:
-            authorizationStatus = .notDetermined
+            // Fall back to cached status if available
+            if let cached = UserDefaults.standard.string(forKey: Self.authStatusKey),
+               let cachedStatus = AuthorizationStatus(rawValue: cached) {
+                authorizationStatus = cachedStatus
+            } else {
+                authorizationStatus = .notDetermined
+            }
+        }
+
+        // If system says notDetermined but we have a cached approved status,
+        // the system might not be ready yet - use cached value
+        if systemStatus == .notDetermined,
+           let cached = UserDefaults.standard.string(forKey: Self.authStatusKey),
+           cached == AuthorizationStatus.approved.rawValue {
+            authorizationStatus = .approved
         }
     }
 
@@ -58,10 +83,13 @@ final class FocusBlockingService {
         do {
             try await center.requestAuthorization(for: .individual)
             authorizationStatus = .approved
+            // Cache the approved status
+            UserDefaults.standard.set(AuthorizationStatus.approved.rawValue, forKey: Self.authStatusKey)
             return true
         } catch {
             print("FocusBlockingService: Authorization failed - \(error)")
             authorizationStatus = .denied
+            UserDefaults.standard.set(AuthorizationStatus.denied.rawValue, forKey: Self.authStatusKey)
             return false
         }
     }
@@ -248,6 +276,71 @@ final class FocusBlockingService {
         print("FocusBlockingService: Created default profiles")
     }
 }
+#else
+@Observable
+final class FocusBlockingService {
+    // MARK: - State
+
+    private(set) var authorizationStatus: AuthorizationStatus = .notDetermined
+    private(set) var isBlocking: Bool = false
+    private(set) var currentSession: FocusSession?
+    private(set) var activeProfile: FocusProfile?
+
+    // MARK: - Initialization
+
+    init(modelContext: ModelContext) {
+        _ = modelContext
+    }
+
+    // MARK: - Authorization
+
+    func checkAuthorizationStatus() {}
+
+    @MainActor
+    func requestAuthorization() async -> Bool {
+        false
+    }
+
+    var isAuthorized: Bool {
+        false
+    }
+
+    // MARK: - Blocking Control
+
+    func startBlocking(
+        profile: FocusProfile,
+        linkedTimeEntryId: UUID? = nil,
+        plannedDuration: TimeInterval? = nil
+    ) {
+        _ = profile
+        _ = linkedTimeEntryId
+        _ = plannedDuration
+    }
+
+    func stopBlocking(successful: Bool = true) {
+        _ = successful
+    }
+
+    func recordOverride() {}
+
+    func checkForEndSessionRequest() {}
+
+    // MARK: - Stats
+
+    func getStats() -> FocusStats? {
+        nil
+    }
+
+    // MARK: - Profile Management
+
+    func fetchProfiles() -> [FocusProfile] {
+        []
+    }
+
+    func ensureDefaultProfiles() {}
+
+}
+#endif
 
 // MARK: - Authorization Status
 

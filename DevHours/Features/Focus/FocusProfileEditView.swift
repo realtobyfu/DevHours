@@ -7,8 +7,11 @@
 
 import SwiftUI
 import SwiftData
+#if !os(macOS)
 import FamilyControls
+#endif
 
+#if !os(macOS)
 struct FocusProfileEditView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
@@ -295,3 +298,30 @@ struct FocusProfileEditView: View {
         FocusProfileEditView(profile: nil)
     }
 }
+#else
+struct FocusProfileEditView: View {
+    let profile: FocusProfile?
+
+    var body: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "iphone")
+                .font(.system(size: 36))
+                .foregroundStyle(.secondary)
+
+            Text("Focus Mode is available on iPhone and iPad.")
+                .font(.headline)
+                .multilineTextAlignment(.center)
+
+            Text("Create and manage focus profiles on iOS, then sync them to your Mac.")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+        }
+        .padding()
+    }
+}
+
+#Preview {
+    FocusProfileEditView(profile: nil)
+}
+#endif

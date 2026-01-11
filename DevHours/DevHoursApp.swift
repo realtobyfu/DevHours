@@ -22,6 +22,8 @@ struct DevHoursApp: App {
 
     @State private var premiumManager = PremiumManager()
 
+    @State private var showingOnboarding = !AppOnboardingView.hasCompletedOnboarding
+
     var body: some Scene {
         WindowGroup {
             MainTabView()
@@ -42,6 +44,19 @@ struct DevHoursApp: App {
                         focusBlockingService.checkForEndSessionRequest()
                     }
                 }
+                #if os(iOS)
+                .fullScreenCover(isPresented: $showingOnboarding) {
+                    AppOnboardingView {
+                        // Onboarding completed
+                    }
+                }
+                #else
+                .sheet(isPresented: $showingOnboarding) {
+                    AppOnboardingView {
+                        // Onboarding completed
+                    }
+                }
+                #endif
         }
         .modelContainer(SharedDataManager.shared.sharedModelContainer)
     }

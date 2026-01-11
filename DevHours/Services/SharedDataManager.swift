@@ -30,14 +30,29 @@ final class SharedDataManager {
             FocusSession.self,
             FocusStats.self,
         ])
+
+        // Enable CloudKit on iOS; avoid it on macOS where the schema isn't CloudKit-ready.
+        #if os(macOS)
         let config = ModelConfiguration(
             schema: schema,
             groupContainer: .identifier(Self.appGroupIdentifier)
         )
+        #else
+        let config = ModelConfiguration(
+            schema: schema,
+            groupContainer: .identifier(Self.appGroupIdentifier),
+            cloudKitDatabase: .automatic
+        )
+        #endif
         do {
             return try ModelContainer(for: schema, configurations: [config])
         } catch {
-            fatalError("Failed to create shared ModelContainer: \(error)")
+            assertionFailure("Failed to create shared ModelContainer, falling back to local store: \(error)")
+            do {
+                return try ModelContainer(for: schema)
+            } catch {
+                fatalError("Failed to create local ModelContainer: \(error)")
+            }
         }
     }()
 

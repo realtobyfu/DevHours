@@ -22,56 +22,58 @@ struct FocusToggleRow: View {
     @State private var showingPremiumPrompt = false
 
     var body: some View {
-        HStack(spacing: 12) {
-            // Focus Mode label and profile selector
-            Button {
-                if focusService.isAuthorized {
-                    showingProfilePicker = true
-                } else {
-                    showingOnboarding = true
-                }
-            } label: {
-                HStack(spacing: 8) {
-//                    Image(systemName: "moon.fill")
-//                        .font(.subheadline)
-//                        .foregroundStyle(isEnabled ? Color.accentColor : .secondary)
-
-                    if let profile = selectedProfile {
-                        HStack(spacing: 4) {
-                            Image(systemName: profile.iconName)
-                                .font(.caption)
-                            Text(profile.name)
-                                .font(.subheadline)
-                        }
-                        .foregroundStyle(isEnabled ? Color.fromHex(profile.colorHex) : .secondary)
-                    } else {
-                        Text("Focus Mode")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
+        VStack(spacing: 8) {
+            HStack(spacing: 12) {
+                // Focus Mode label and profile selector
+                Button {
+                    if focusService.isAuthorized {
+                        showingProfilePicker = true
+                    } else if !FocusOnboardingView.hasCompletedOnboarding {
+                        // Only show onboarding if not completed before
+                        showingOnboarding = true
                     }
+                    // If not authorized but already completed onboarding, do nothing
+                    // (user skipped - they need to go to Settings to enable)
+                } label: {
+                    HStack(spacing: 8) {
+                        if let profile = selectedProfile {
+                            HStack(spacing: 4) {
+                                Image(systemName: profile.iconName)
+                                    .font(.caption.weight(.medium))
+                                Text(profile.name)
+                                    .font(.subheadline)
+                            }
+                            .foregroundStyle(isEnabled ? Color.fromHex(profile.colorHex) : .secondary)
+                        } else {
+                            Text("Focus Mode")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
 
-                    Image(systemName: "chevron.down")
-                        .font(.caption2)
-                        .foregroundStyle(.tertiary)
+                        Image(systemName: "chevron.down")
+                            .font(.caption2)
+                            .foregroundStyle(.tertiary)
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background(
+                        Capsule()
+                            .fill(isEnabled ? Color.accentColor.opacity(0.1) : Color.secondary.opacity(0.1))
+                    )
                 }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
-                .background(
-                    Capsule()
-                        .fill(isEnabled ? Color.accentColor.opacity(0.1) : Color.secondary.opacity(0.1))
-                )
+                .buttonStyle(.plain)
+
+                Spacer()
+
+                // Toggle
+                Toggle("", isOn: $isEnabled)
+                    .labelsHidden()
+                    .tint(Color.accentColor)
+                    .onChange(of: isEnabled) { _, newValue in
+                        handleToggleChange(newValue)
+                    }
             }
-            .buttonStyle(.plain)
 
-            Spacer()
-
-            // Toggle
-            Toggle("", isOn: $isEnabled)
-                .labelsHidden()
-                .tint(Color.accentColor)
-                .onChange(of: isEnabled) { _, newValue in
-                    handleToggleChange(newValue)
-                }
         }
         .padding(.horizontal, 4)
         .sheet(isPresented: $showingOnboarding) {
@@ -105,12 +107,19 @@ struct FocusToggleRow: View {
         }
     }
 
+
+    // MARK: - Toggle Handling
+
     private func handleToggleChange(_ enabled: Bool) {
         if enabled {
             // Check authorization
             if !focusService.isAuthorized {
                 isEnabled = false
-                showingOnboarding = true
+                // Only show onboarding if not completed before
+                if !FocusOnboardingView.hasCompletedOnboarding {
+                    showingOnboarding = true
+                }
+                // If already completed onboarding but not authorized, user needs to go to Settings
                 return
             }
 
@@ -156,7 +165,9 @@ struct FocusProfilePickerView: View {
             }
         }
         .navigationTitle("Select Profile")
+        #if os(iOS) && !targetEnvironment(macCatalyst)
         .navigationBarTitleDisplayMode(.inline)
+        #endif
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
                 Button("Cancel") {
@@ -194,6 +205,7 @@ private struct ProfilePickerRow: View {
                 .fill(color.opacity(0.15))
                 .frame(width: 40, height: 40)
             Image(systemName: profile.iconName)
+                .font(.body.weight(.medium))
                 .foregroundStyle(color)
         }
     }

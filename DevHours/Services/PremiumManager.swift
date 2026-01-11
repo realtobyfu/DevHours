@@ -2,21 +2,40 @@
 //  PremiumManager.swift
 //  DevHours
 //
-//  Manages premium feature access. Designed to integrate with a paywall later.
+//  Manages premium feature access with StoreKit 2 integration.
 //
 
 import Foundation
 import Observation
 import SwiftData
+import StoreKit
 
 @Observable
 final class PremiumManager {
 
+    // MARK: - Dependencies
+
+    private(set) var storeKitManager: StoreKitManager
+    private var focusBlockingService: FocusBlockingService?
+
+    // MARK: - Debug Override
+
+    /// Debug flag to force premium status (for testing)
+    var debugOverridePremium: Bool {
+        get { UserDefaults.standard.bool(forKey: "debugPremiumOverride") }
+        set { UserDefaults.standard.set(newValue, forKey: "debugPremiumOverride") }
+    }
+
     // MARK: - Premium Status
 
-    /// Set to true when user has active premium subscription
-    /// This will be wired to a paywall provider (RevenueCat, StoreKit 2, etc.) later
-    var isPremium: Bool = false
+    /// Whether user has active premium access
+    var isPremium: Bool {
+        // Debug override takes precedence
+        if debugOverridePremium { return true }
+
+        // Check StoreKit entitlements
+        return storeKitManager.hasLifetimePurchase
+    }
 
     // MARK: - Free Tier Limits
 
@@ -26,13 +45,11 @@ final class PremiumManager {
     /// Maximum custom profiles for free users (they get 1 default profile)
     static let freeProfileLimit = 1
 
-    // MARK: - Dependencies
-
-    private var focusBlockingService: FocusBlockingService?
-
     // MARK: - Initialization
 
-    init() {}
+    init() {
+        self.storeKitManager = StoreKitManager()
+    }
 
     func configure(with focusBlockingService: FocusBlockingService) {
         self.focusBlockingService = focusBlockingService
@@ -115,26 +132,41 @@ final class PremiumManager {
         "Track your streaks, achievements, and focus statistics with Premium."
     }
 
-    // MARK: - Paywall Integration (Stub)
+    // MARK: - Purchase Methods
 
-    /// Call this when user completes a purchase
-    func handlePurchaseSuccess() {
-        isPremium = true
-        // TODO: Persist premium status
-        // TODO: Sync with backend if needed
+    /// Purchase lifetime premium
+    @MainActor
+    func purchaseLifetime() async -> Bool {
+        await storeKitManager.purchaseLifetime()
     }
 
-    /// Call this to restore purchases
-    func restorePurchases() async -> Bool {
-        // TODO: Implement restore logic with StoreKit 2 or RevenueCat
-        return false
+    /// Restore previous purchases
+    @MainActor
+    func restorePurchases() async {
+        await storeKitManager.restorePurchases()
     }
 
-    /// Check subscription status on app launch
+    /// Check purchase status on app launch
+    @MainActor
     func checkSubscriptionStatus() async {
-        // TODO: Verify subscription is still active
-        // For now, check UserDefaults
-        isPremium = UserDefaults.standard.bool(forKey: "isPremium")
+        await storeKitManager.checkEntitlements()
+    }
+
+    // MARK: - Convenience Accessors
+
+    /// Whether products are still loading
+    var isLoading: Bool {
+        storeKitManager.isLoading
+    }
+
+    /// Any purchase error message
+    var purchaseError: String? {
+        storeKitManager.purchaseError
+    }
+
+    /// Price string for display
+    var priceString: String {
+        storeKitManager.priceString
     }
 }
 

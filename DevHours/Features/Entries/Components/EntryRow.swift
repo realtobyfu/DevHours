@@ -12,16 +12,9 @@ struct EntryRow: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            // Header: Date badge, Title, and Duration Badge
+            // Header: Title and Duration Badge
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 4) {
-                    // Date badge
-                    Text(formatDate(entry.startTime))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .textCase(.uppercase)
-                        .tracking(0.5)
-
                     Text(entry.title.isEmpty ? "Untitled Entry" : entry.title)
                         .font(.headline)
                         .foregroundStyle(entry.title.isEmpty ? .secondary : .primary)
@@ -97,17 +90,7 @@ struct EntryRow: View {
                 .strokeBorder(Color.separatorColor.opacity(0.5), lineWidth: 0.5)
         )
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(formatDate(entry.startTime)), \(entry.title.isEmpty ? "Untitled Entry" : entry.title), \(DurationFormatter.formatAccessible(entry.duration))")
-    }
-
-    private func formatDate(_ date: Date) -> String {
-        if Calendar.current.isDateInToday(date) {
-            return "Today"
-        } else {
-            let formatter = DateFormatter()
-            formatter.dateFormat = "EEE, MMM d"
-            return formatter.string(from: date)
-        }
+        .accessibilityLabel("\(entry.title.isEmpty ? "Untitled Entry" : entry.title), \(formatTimeRange()), \(DurationFormatter.formatAccessible(entry.duration))")
     }
 
     private func formatTimeRange() -> String {

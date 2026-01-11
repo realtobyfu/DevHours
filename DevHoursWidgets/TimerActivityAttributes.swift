@@ -6,6 +6,7 @@
 //  Note: This file must be kept in sync with DevHours/Models/TimerActivityAttributes.swift
 //
 
+#if !os(macOS)
 import ActivityKit
 import Foundation
 
@@ -24,3 +25,4 @@ struct TimerActivityAttributes: ActivityAttributes {
         let projectName: String?
     }
 }
+#endif

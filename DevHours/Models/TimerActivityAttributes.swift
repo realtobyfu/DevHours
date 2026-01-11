@@ -5,6 +5,7 @@
 //  Live Activity attributes for timer tracking.
 //
 
+#if !os(macOS)
 import ActivityKit
 import Foundation
 
@@ -23,3 +24,4 @@ struct TimerActivityAttributes: ActivityAttributes {
         let projectName: String?
     }
 }
+#endif

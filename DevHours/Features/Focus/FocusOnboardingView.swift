@@ -6,28 +6,48 @@
 //
 
 import SwiftUI
+#if !os(macOS)
 import FamilyControls
+#endif
 
+#if !os(macOS)
 struct FocusOnboardingView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(FocusBlockingService.self) private var focusService
 
     @State private var currentPage = 0
     @State private var isRequestingAuthorization = false
+    @State private var showingSuccessPage = false
+    @State private var showingSkipConfirmation = false
 
     var onComplete: () -> Void
+
+    // Key for tracking onboarding completion
+    static let hasCompletedOnboardingKey = "hasCompletedFocusOnboarding"
+
+    static var hasCompletedOnboarding: Bool {
+        get { UserDefaults.standard.bool(forKey: hasCompletedOnboardingKey) }
+        set { UserDefaults.standard.set(newValue, forKey: hasCompletedOnboardingKey) }
+    }
+
+    private var totalPages: Int {
+        showingSuccessPage ? 4 : 3
+    }
 
     var body: some View {
         VStack(spacing: 0) {
             // Page indicator
             HStack(spacing: 8) {
-                ForEach(0..<3, id: \.self) { index in
+                ForEach(0..<totalPages, id: \.self) { index in
                     Circle()
                         .fill(index == currentPage ? Color.accentColor : Color.secondary.opacity(0.3))
                         .frame(width: 8, height: 8)
+                        .accessibilityHidden(true)
                 }
             }
             .padding(.top, 20)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("Page \(currentPage + 1) of \(totalPages)")
 
             TabView(selection: $currentPage) {
                 // Page 1: Value Proposition
@@ -41,10 +61,30 @@ struct FocusOnboardingView: View {
                 // Page 3: Permission Request
                 permissionPage
                     .tag(2)
+
+                // Page 4: Success (only shown after authorization)
+                if showingSuccessPage {
+                    successPage
+                        .tag(3)
+                }
             }
+            #if os(iOS)
             .tabViewStyle(.page(indexDisplayMode: .never))
+            #else
+            .tabViewStyle(.automatic)
+            #endif
         }
         .interactiveDismissDisabled()
+        .alert("Skip Focus Mode Setup?", isPresented: $showingSkipConfirmation) {
+            Button("Cancel", role: .cancel) {}
+            Button("Skip", role: .destructive) {
+                // Mark as completed so we don't show again
+                Self.hasCompletedOnboarding = true
+                dismiss()
+            }
+        } message: {
+            Text("You can always set up Focus Mode later in Settings.")
+        }
     }
 
     // MARK: - Page 1: Value Proposition
@@ -54,9 +94,10 @@ struct FocusOnboardingView: View {
             Spacer()
 
             Image(systemName: "brain.head.profile")
-                .font(.system(size: 80))
+                .font(.system(size: 80, weight: .medium))
                 .foregroundStyle(Color.accentColor)
                 .symbolEffect(.pulse)
+                .accessibilityHidden(true)
 
             VStack(spacing: 12) {
                 Text("Stay in the Zone")
@@ -85,6 +126,7 @@ struct FocusOnboardingView: View {
             .buttonStyle(.borderedProminent)
             .padding(.horizontal, 24)
             .padding(.bottom, 32)
+            .accessibilityLabel("Continue to next page")
         }
     }
 
@@ -133,6 +175,7 @@ struct FocusOnboardingView: View {
             .buttonStyle(.borderedProminent)
             .padding(.horizontal, 24)
             .padding(.bottom, 32)
+            .accessibilityLabel("Continue to permission request")
         }
     }
 
@@ -144,9 +187,10 @@ struct FocusOnboardingView: View {
                     .frame(width: 50, height: 50)
 
                 Image(systemName: icon)
-                    .font(.title2)
+                    .font(.title2.weight(.medium))
                     .foregroundStyle(Color.accentColor)
             }
+            .accessibilityHidden(true)
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(title)
@@ -159,6 +203,8 @@ struct FocusOnboardingView: View {
 
             Spacer()
         }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Step \(number): \(title). \(description)")
     }
 
     // MARK: - Page 3: Permission Request
@@ -167,10 +213,11 @@ struct FocusOnboardingView: View {
         VStack(spacing: 24) {
             Spacer()
 
-            Image(systemName: "hourglass")
-                .font(.system(size: 60))
+            Image(systemName: "moon.fill")
+                .font(.system(size: 60, weight: .medium))
                 .foregroundStyle(Color.accentColor)
                 .symbolEffect(.bounce)
+                .accessibilityHidden(true)
 
             VStack(spacing: 12) {
                 Text("One Quick Permission")
@@ -212,17 +259,71 @@ struct FocusOnboardingView: View {
                 }
                 .buttonStyle(.borderedProminent)
                 .disabled(isRequestingAuthorization)
+                .accessibilityLabel("Allow Screen Time access")
+                .accessibilityHint("Opens system permission dialog")
 
                 Button {
-                    dismiss()
+                    showingSkipConfirmation = true
                 } label: {
                     Text("Skip for Now")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
+                .accessibilityLabel("Skip Focus Mode setup")
+                .accessibilityHint("You can set up Focus Mode later in Settings")
             }
             .padding(.horizontal, 24)
             .padding(.bottom, 32)
+        }
+    }
+
+    // MARK: - Page 4: Success
+
+    private var successPage: some View {
+        VStack(spacing: 24) {
+            Spacer()
+
+            ZStack {
+                Circle()
+                    .fill(Color.green.opacity(0.15))
+                    .frame(width: 120, height: 120)
+
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.system(size: 60, weight: .medium))
+                    .foregroundStyle(.green)
+                    .symbolEffect(.bounce, value: showingSuccessPage)
+            }
+            .accessibilityHidden(true)
+
+            VStack(spacing: 12) {
+                Text("You're All Set!")
+                    .font(.largeTitle)
+                    .fontWeight(.bold)
+
+                Text("Focus Mode is ready. When you start a timer, you can enable Focus Mode to block distracting apps.")
+                    .font(.body)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 32)
+            }
+
+            Spacer()
+
+            Button {
+                // Mark as completed
+                Self.hasCompletedOnboarding = true
+                onComplete()
+                dismiss()
+            } label: {
+                Text("Get Started")
+                    .font(.headline)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 16)
+            }
+            .buttonStyle(.borderedProminent)
+            .padding(.horizontal, 24)
+            .padding(.bottom, 32)
+            .accessibilityLabel("Get started with Focus Mode")
         }
     }
 
@@ -238,8 +339,12 @@ struct FocusOnboardingView: View {
         if success {
             // Create default profiles
             focusService.ensureDefaultProfiles()
-            onComplete()
-            dismiss()
+
+            // Show success page
+            withAnimation {
+                showingSuccessPage = true
+                currentPage = 3
+            }
         }
     }
 }
@@ -247,3 +352,51 @@ struct FocusOnboardingView: View {
 #Preview {
     FocusOnboardingView(onComplete: {})
 }
+#else
+struct FocusOnboardingView: View {
+    @Environment(\.dismiss) private var dismiss
+
+    var onComplete: () -> Void
+
+    static let hasCompletedOnboardingKey = "hasCompletedFocusOnboarding"
+
+    static var hasCompletedOnboarding: Bool {
+        get { UserDefaults.standard.bool(forKey: hasCompletedOnboardingKey) }
+        set { UserDefaults.standard.set(newValue, forKey: hasCompletedOnboardingKey) }
+    }
+
+    var body: some View {
+        VStack(spacing: 20) {
+            Spacer()
+
+            Image(systemName: "iphone")
+                .font(.system(size: 48))
+                .foregroundStyle(.secondary)
+
+            Text("Focus Mode setup happens on iPhone or iPad.")
+                .font(.headline)
+                .multilineTextAlignment(.center)
+
+            Text("Once enabled on iOS, your focus profiles will sync here.")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+
+            Spacer()
+
+            Button("Done") {
+                Self.hasCompletedOnboarding = true
+                onComplete()
+                dismiss()
+            }
+            .buttonStyle(.borderedProminent)
+        }
+        .padding(32)
+        .frame(minWidth: 300, minHeight: 250)
+    }
+}
+
+#Preview {
+    FocusOnboardingView(onComplete: {})
+}
+#endif

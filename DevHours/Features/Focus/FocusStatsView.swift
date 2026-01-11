@@ -98,7 +98,9 @@ struct FocusStatsView: View {
             }
         }
         .navigationTitle("Focus Statistics")
+        #if os(iOS) && !targetEnvironment(macCatalyst)
         .navigationBarTitleDisplayMode(.inline)
+        #endif
     }
 
     private func formatDuration(_ seconds: Int) -> String {

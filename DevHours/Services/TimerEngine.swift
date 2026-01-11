@@ -8,7 +8,9 @@
 import Foundation
 import SwiftData
 import Observation
+#if !os(macOS)
 import ActivityKit
+#endif
 
 @Observable
 final class TimerEngine {
@@ -22,7 +24,9 @@ final class TimerEngine {
 
     private var timer: Timer?
     private let modelContext: ModelContext
+    #if !os(macOS)
     private var currentActivity: Activity<TimerActivityAttributes>?
+    #endif
 
     // MARK: - Computed Properties
 
@@ -211,6 +215,7 @@ final class TimerEngine {
     }
 
     // MARK: - Live Activity
+    #if !os(macOS)
     private func startLiveActivity(title: String, projectName: String?, startTime: Date) {
         guard ActivityAuthorizationInfo().areActivitiesEnabled else {
             print("TimerEngine: Live Activities not enabled")
@@ -394,4 +399,13 @@ final class TimerEngine {
             print("TimerEngine: Failed to start paused Live Activity - \(error)")
         }
     }
+    #else
+    private func startLiveActivity(title: String, projectName: String?, startTime: Date) {}
+    private func endLiveActivity() {}
+    private func updateLiveActivity(title: String, projectName: String?) {}
+    private func updateLiveActivityPaused() {}
+    private func updateLiveActivityResumed() {}
+    private func restoreLiveActivityIfNeeded() {}
+    private func startLiveActivityPaused(entry: TimeEntry) {}
+    #endif
 }

@@ -98,7 +98,7 @@ struct FocusProfileRow: View {
                     .frame(width: 44, height: 44)
 
                 Image(systemName: profile.iconName)
-                    .font(.title3)
+                    .font(.title3.weight(.medium))
                     .foregroundStyle(Color.fromHex(profile.colorHex))
             }
 

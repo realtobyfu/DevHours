@@ -7,7 +7,9 @@
 
 import Foundation
 import SwiftData
+#if !os(macOS)
 import FamilyControls
+#endif
 
 /// Strictness level determines how hard it is to unlock blocked apps
 enum StrictnessLevel: String, Codable, CaseIterable {
@@ -74,6 +76,7 @@ final class FocusProfile {
 
     // MARK: - FamilyActivitySelection Encoding/Decoding
 
+    #if !os(macOS)
     var blockedApps: FamilyActivitySelection? {
         get {
             guard let data = blockedAppsData else { return nil }
@@ -97,11 +100,21 @@ final class FocusProfile {
             }
         }
     }
+    #else
+    var blockedApps: Data? {
+        get { blockedAppsData }
+        set { blockedAppsData = newValue }
+    }
+    #endif
 
     /// Check if this profile has any apps or categories selected
     var hasBlockedApps: Bool {
+        #if !os(macOS)
         guard let selection = blockedApps else { return false }
         return !selection.applicationTokens.isEmpty || !selection.categoryTokens.isEmpty
+        #else
+        return false
+        #endif
     }
 }
 
