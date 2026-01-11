@@ -17,6 +17,7 @@ struct FocusProfilesView: View {
     @State private var showingNewProfile = false
     @State private var profileToEdit: FocusProfile?
     @State private var showingPremiumPrompt = false
+    @State private var showingPaywall = false
 
     var body: some View {
         List {
@@ -63,11 +64,14 @@ struct FocusProfilesView: View {
         }
         .alert("Premium Feature", isPresented: $showingPremiumPrompt) {
             Button("Maybe Later", role: .cancel) {}
-            Button("Learn More") {
-                // TODO: Show paywall
+            Button("Upgrade") {
+                showingPaywall = true
             }
         } message: {
             Text(premiumManager.profileLimitMessage)
+        }
+        .sheet(isPresented: $showingPaywall) {
+            PremiumUpsellSheet.profileLimit
         }
     }
 

@@ -246,6 +246,8 @@ struct AchievementRow: View {
 // MARK: - Premium Upsell Card
 
 struct PremiumUpsellCard: View {
+    @State private var showingPaywall = false
+
     var body: some View {
         VStack(spacing: 16) {
             Image(systemName: "chart.bar.fill")
@@ -263,9 +265,9 @@ struct PremiumUpsellCard: View {
                 .padding(.horizontal)
 
             Button {
-                // TODO: Show paywall
+                showingPaywall = true
             } label: {
-                Text("Learn More")
+                Text("Upgrade")
                     .font(.headline)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 12)
@@ -280,6 +282,9 @@ struct PremiumUpsellCard: View {
                 .fill(Color.accentColor.opacity(0.1))
         )
         .padding(.horizontal)
+        .sheet(isPresented: $showingPaywall) {
+            PremiumUpsellSheet.focusStats
+        }
     }
 }
 

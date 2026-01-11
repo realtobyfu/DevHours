@@ -20,6 +20,7 @@ struct FocusToggleRow: View {
     @State private var showingProfilePicker = false
     @State private var showingOnboarding = false
     @State private var showingPremiumPrompt = false
+    @State private var showingPaywall = false
 
     var body: some View {
         VStack(spacing: 8) {
@@ -38,8 +39,8 @@ struct FocusToggleRow: View {
                     HStack(spacing: 8) {
                         if let profile = selectedProfile {
                             HStack(spacing: 4) {
-                                Image(systemName: profile.iconName)
-                                    .font(.caption.weight(.medium))
+//                                Image(systemName: profile.iconName)
+//                                    .font(.caption.weight(.medium))
                                 Text(profile.name)
                                     .font(.subheadline)
                             }
@@ -93,11 +94,14 @@ struct FocusToggleRow: View {
         }
         .alert("Premium Feature", isPresented: $showingPremiumPrompt) {
             Button("Maybe Later", role: .cancel) {}
-            Button("Learn More") {
-                // TODO: Show paywall
+            Button("Upgrade") {
+                showingPaywall = true
             }
         } message: {
             Text(premiumManager.sessionLimitMessage)
+        }
+        .sheet(isPresented: $showingPaywall) {
+            PremiumUpsellSheet.sessionLimit
         }
         .onAppear {
             // Select default profile if none selected
