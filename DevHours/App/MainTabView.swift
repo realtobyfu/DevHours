@@ -53,27 +53,54 @@ struct MainTabView: View {
         }
     }
     #else
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @State private var selection: NavigationItem? = .today
+
     var body: some View {
-        TabView {
-            TodayView()
-                .tabItem {
-                    Label("Today", systemImage: "timer")
+        if horizontalSizeClass == .regular {
+            NavigationSplitView {
+                List(NavigationItem.allCases, selection: $selection) { item in
+                    Label(item.rawValue, systemImage: item.icon)
+                        .tag(item)
                 }
+                .navigationTitle("DevHours")
+            } detail: {
+                switch selection {
+                case .today:
+                    TodayView()
+                case .planning:
+                    PlanningView()
+                case .entries:
+                    EntriesView()
+                case .settings:
+                    SettingsView()
+                case nil:
+                    Text("Select an item")
+                        .foregroundStyle(.secondary)
+                }
+            }
+        } else {
+            TabView {
+                TodayView()
+                    .tabItem {
+                        Label("Today", systemImage: "timer")
+                    }
 
-            PlanningView()
-                .tabItem {
-                    Label("Planning", systemImage: "calendar")
-                }
+                PlanningView()
+                    .tabItem {
+                        Label("Planning", systemImage: "calendar")
+                    }
 
-            EntriesView()
-                .tabItem {
-                    Label("Entries", systemImage: "list.bullet")
-                }
+                EntriesView()
+                    .tabItem {
+                        Label("Entries", systemImage: "list.bullet")
+                    }
 
-            SettingsView()
-                .tabItem {
-                    Label("Settings", systemImage: "gear")
-                }
+                SettingsView()
+                    .tabItem {
+                        Label("Settings", systemImage: "gear")
+                    }
+            }
         }
     }
     #endif
@@ -83,4 +110,3 @@ struct MainTabView: View {
 #Preview {
     MainTabView()
 }
-

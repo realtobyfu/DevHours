@@ -39,8 +39,8 @@ struct FocusToggleRow: View {
                     HStack(spacing: 8) {
                         if let profile = selectedProfile {
                             HStack(spacing: 4) {
-//                                Image(systemName: profile.iconName)
-//                                    .font(.caption.weight(.medium))
+                                Image(systemName: profile.iconName)
+                                    .font(.caption.weight(.medium))
                                 Text(profile.name)
                                     .font(.subheadline)
                             }

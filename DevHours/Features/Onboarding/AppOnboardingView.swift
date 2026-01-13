@@ -76,24 +76,16 @@ struct AppOnboardingView: View {
         VStack(spacing: 24) {
             Spacer()
 
-            // App Icon
-            if let appIcon = PlatformImage(named: "AppIcon") ?? Bundle.main.icon {
-                #if canImport(UIKit)
-                Image(uiImage: appIcon)
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .frame(width: 120, height: 120)
-                    .clipShape(RoundedRectangle(cornerRadius: 28))
-                    .shadow(color: Color.black.opacity(0.2), radius: 20, y: 10)
-                #else
-                Image(nsImage: appIcon)
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .frame(width: 120, height: 120)
-                    .clipShape(RoundedRectangle(cornerRadius: 28))
-                    .shadow(color: Color.black.opacity(0.2), radius: 20, y: 10)
-                #endif
+            // Symbol in place of app icon
+            ZStack {
+                RoundedRectangle(cornerRadius: 28)
+                    .fill(Color.accentColor.opacity(0.15))
+                Image(systemName: "hourglass.circle.fill")
+                    .font(.system(size: 64, weight: .semibold))
+                    .foregroundStyle(Color.accentColor)
             }
+            .frame(width: 120, height: 120)
+            .shadow(color: Color.black.opacity(0.2), radius: 20, y: 10)
 
             VStack(spacing: 12) {
                 Text("Welcome to DevHours")
