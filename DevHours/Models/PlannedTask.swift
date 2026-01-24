@@ -19,7 +19,6 @@ final class PlannedTask {
     var completedAt: Date?
 
     // Relationships
-    var project: Project?
     @Relationship(deleteRule: .nullify, inverse: \RecurrenceRule.plannedTask)
     var recurrenceRule: RecurrenceRule?
 
@@ -71,7 +70,6 @@ final class PlannedTask {
         title: String,
         plannedDate: Date,
         estimatedDuration: TimeInterval,
-        project: Project? = nil,
         recurrenceRule: RecurrenceRule? = nil,
         parentTaskId: UUID? = nil,
         tags: [Tag] = []
@@ -80,7 +78,6 @@ final class PlannedTask {
         self.title = title
         self.plannedDate = plannedDate
         self.estimatedDuration = estimatedDuration
-        self.project = project
         self.recurrenceRule = recurrenceRule
         self.parentTaskId = parentTaskId
         self.isCompleted = false

@@ -262,10 +262,9 @@ struct TodayView: View {
         // Pre-fill the title input
         titleInput = task.title
 
-        // Start timer with task's project
+        // Start timer
         timerEngine.startTimer(
             title: task.title,
-            project: task.project,
             sourcePlannedTask: task
         )
     }

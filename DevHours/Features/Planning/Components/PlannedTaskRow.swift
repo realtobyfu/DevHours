@@ -28,15 +28,12 @@ struct PlannedTaskRow: View {
 //            .accessibilityLabel(task.isCompleted ? "Mark incomplete" : "Mark complete")
 
             VStack(alignment: .leading, spacing: 4) {
-                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                VStack(alignment: .leading, spacing: 4) {
                     Text(task.title.isEmpty ? "Untitled Task" : task.title)
                         .font(.headline)
                         .strikethrough(task.isCompleted)
                         .foregroundStyle(task.isCompleted ? .secondary : .primary)
                         .lineLimit(2)
-                        .layoutPriority(1)
-
-                    Spacer(minLength: 8)
 
                     let tags = task.tags ?? []
                     if !tags.isEmpty {
@@ -66,13 +63,6 @@ struct PlannedTaskRow: View {
                             .font(.caption)
                             .foregroundStyle(.orange)
                     }
-                }
-
-                // Project if set
-                if let project = task.project {
-                    Text(project.name)
-                        .font(.caption)
-                        .foregroundStyle(.tertiary)
                 }
             }
 

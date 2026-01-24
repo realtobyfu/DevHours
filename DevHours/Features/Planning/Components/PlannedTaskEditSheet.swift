@@ -15,16 +15,12 @@ struct PlannedTaskEditSheet: View {
     let initialDate: Date
     let existingTask: PlannedTask?
 
-    @Query(sort: \Project.name)
-    private var projects: [Project]
-
     @Query(sort: \Tag.name)
     private var allTags: [Tag]
 
     @State private var title: String = ""
     @State private var plannedDate: Date = Date()
     @State private var estimatedDuration: TimeInterval = 3600  // Default 1 hour
-    @State private var selectedProject: Project?
     @State private var recurrenceFrequency: RecurrenceFrequency?
     @State private var recurrenceEndDate: Date?
     @State private var selectedTags: [Tag] = []
@@ -52,23 +48,6 @@ struct PlannedTaskEditSheet: View {
                 // Duration Section
                 Section {
                     DurationPickerView(duration: $estimatedDuration)
-                }
-
-                // Project Section (optional)
-                Section {
-                    Picker("Project", selection: $selectedProject) {
-                        Text("None").tag(nil as Project?)
-
-                        ForEach(projects) { project in
-                            Text(project.name).tag(project as Project?)
-                        }
-                    }
-                } header: {
-                    Text("Project")
-                } footer: {
-                    if projects.isEmpty {
-                        Text("Create projects in Settings to organize your tasks.")
-                    }
                 }
 
                 // Recurrence Section (only for new tasks or recurring parents)
@@ -148,7 +127,6 @@ struct PlannedTaskEditSheet: View {
             title = task.title
             plannedDate = task.plannedDate
             estimatedDuration = task.estimatedDuration
-            selectedProject = task.project
             recurrenceFrequency = task.recurrenceRule?.frequencyType
             recurrenceEndDate = task.recurrenceRule?.endDate
             selectedTags = task.tags ?? []
@@ -169,7 +147,6 @@ struct PlannedTaskEditSheet: View {
             task.title = trimmedTitle
             task.plannedDate = normalizedDate
             task.estimatedDuration = estimatedDuration
-            task.project = selectedProject
             task.tags = selectedTags.isEmpty ? nil : selectedTags
 
             // Update recurrence rule if this is a recurring parent
@@ -202,7 +179,6 @@ struct PlannedTaskEditSheet: View {
                 title: trimmedTitle,
                 plannedDate: normalizedDate,
                 estimatedDuration: estimatedDuration,
-                project: selectedProject,
                 recurrenceRule: recurrenceRule,
                 tags: selectedTags
             )
@@ -240,5 +216,5 @@ struct PlannedTaskEditSheet: View {
 
 #Preview("New Task") {
     PlannedTaskEditSheet(initialDate: Date(), existingTask: nil)
-        .modelContainer(for: [PlannedTask.self, Project.self, Tag.self], inMemory: true)
+        .modelContainer(for: [PlannedTask.self, Tag.self], inMemory: true)
 }

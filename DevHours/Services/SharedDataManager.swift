@@ -20,7 +20,6 @@ final class SharedDataManager {
         let schema = Schema([
             TimeEntry.self,
             Client.self,
-            Project.self,
             PlannedTask.self,
             RecurrenceRule.self,
             Tag.self,
@@ -55,12 +54,8 @@ final class SharedDataManager {
 
     // MARK: - Timer Operations
 
-    func startTimer(title: String, projectId: UUID? = nil) {
+    func startTimer(title: String) {
         let entry = TimeEntry(startTime: .now, title: title)
-        if let projectId {
-            let descriptor = FetchDescriptor<Project>(predicate: #Predicate { $0.id == projectId })
-            entry.project = try? modelContext.fetch(descriptor).first
-        }
         modelContext.insert(entry)
         try? modelContext.save()
     }

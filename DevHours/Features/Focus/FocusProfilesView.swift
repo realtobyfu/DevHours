@@ -108,33 +108,17 @@ struct FocusProfileRow: View {
 
             // Profile info
             VStack(alignment: .leading, spacing: 4) {
-                HStack {
-                    Text(profile.name)
-                        .font(.headline)
+                Text(profile.name)
+                    .font(.headline)
 
-                    if profile.isDefault {
-                        Text("DEFAULT")
-                            .font(.caption2)
-                            .fontWeight(.semibold)
-                            .foregroundStyle(.secondary)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(Color.secondary.opacity(0.15))
-                            .clipShape(Capsule())
-                    }
-                }
-
-                HStack(spacing: 8) {
-
-                    if profile.hasBlockedApps {
-                        Text("Apps selected")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    } else {
-                        Text("No apps selected")
-                            .font(.caption)
-                            .foregroundStyle(.orange)
-                    }
+                if profile.hasBlockedApps {
+                    Label("Apps selected", systemImage: "checkmark.circle.fill")
+                        .font(.caption)
+                        .foregroundStyle(.green.opacity(0.8))
+                } else {
+                    Label("No apps selected", systemImage: "exclamationmark.circle")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
             }
 

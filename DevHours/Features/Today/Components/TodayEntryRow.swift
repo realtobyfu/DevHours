@@ -12,6 +12,18 @@ struct TodayEntryRow: View {
     @Bindable var entry: TimeEntry
     @FocusState private var isTitleFocused: Bool
 
+    /// Accent color based on tag color or title hash for visual variety
+    private var accentColor: Color {
+        // Priority 1: Use first tag's color
+        if let tags = entry.tags, let firstTag = tags.first {
+            return Color.fromHex(firstTag.colorHex)
+        }
+        // Priority 2: Deterministic color from title hash
+        let hash = abs(entry.title.hashValue)
+        let colorIndex = hash % TagColors.presets.count
+        return Color.fromHex(TagColors.presets[colorIndex].hex)
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             // Header: Title and Duration Badge
@@ -44,25 +56,18 @@ struct TodayEntryRow: View {
                 .padding(.vertical, 6)
                 .background(
                     Capsule()
-                        .fill(Color.accentColor.opacity(0.15))
+                        .fill(accentColor.opacity(0.15))
                 )
-                .foregroundStyle(Color.accentColor)
+                .foregroundStyle(accentColor)
             }
 
-            // Client/Project tag (if available)
+            // Client tag (if available)
             if let client = entry.client {
                 HStack(spacing: 6) {
                     Image(systemName: "building.2.fill")
                         .font(.caption2)
                     Text(client.name)
                         .font(.subheadline)
-
-                    if let project = entry.project {
-                        Image(systemName: "chevron.right")
-                            .font(.caption2)
-                        Text(project.name)
-                            .font(.subheadline)
-                    }
                 }
                 .padding(.horizontal, 10)
                 .padding(.vertical, 4)

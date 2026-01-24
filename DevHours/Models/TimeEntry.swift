@@ -17,7 +17,6 @@ final class TimeEntry {
 
     // Relationships (optional for MVP Timer phase, but defined for future)
     var client: Client?
-    var project: Project?
 
     // Link back to the planned task that spawned this entry (if any)
     @Relationship(inverse: \PlannedTask.linkedTimeEntries)
@@ -64,14 +63,12 @@ final class TimeEntry {
         startTime: Date,
         endTime: Date? = nil,
         title: String = "",
-        client: Client? = nil,
-        project: Project? = nil
+        client: Client? = nil
     ) {
         self.id = UUID()
         self.startTime = startTime
         self.endTime = endTime
         self.title = title
         self.client = client
-        self.project = project
     }
 }

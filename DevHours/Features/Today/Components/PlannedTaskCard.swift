@@ -21,13 +21,10 @@ struct PlannedTaskCard: View {
         HStack(spacing: 16) {
             // Task details on the left
             VStack(alignment: .leading, spacing: 6) {
-                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                VStack(alignment: .leading, spacing: 4) {
                     Text(task.title.isEmpty ? "Untitled Task" : task.title)
                         .font(.headline)
                         .lineLimit(2)
-                        .layoutPriority(1)
-
-                    Spacer(minLength: 8)
 
                     let tags = task.tags ?? []
                     if !tags.isEmpty {
@@ -51,13 +48,6 @@ struct PlannedTaskCard: View {
                         )
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
-                    }
-
-                    // Project name (subtle)
-                    if let project = task.project {
-                        Text("(\(project.name))")
-                            .font(.caption)
-                            .foregroundStyle(.tertiary)
                     }
                 }
 

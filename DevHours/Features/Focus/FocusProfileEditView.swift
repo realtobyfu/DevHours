@@ -132,7 +132,7 @@ struct FocusProfileEditView: View {
                         Spacer()
 
                         if !appSelection.applicationTokens.isEmpty || !appSelection.categoryTokens.isEmpty {
-                            Text("\(appSelection.applicationTokens.count + appSelection.categoryTokens.count) selected")
+                            Text(selectionSummary)
                                 .foregroundStyle(.secondary)
                         }
 
@@ -223,6 +223,23 @@ struct FocusProfileEditView: View {
     }
 
     // MARK: - Computed Properties
+
+    /// Generates a summary of selected apps and categories
+    private var selectionSummary: String {
+        let appCount = appSelection.applicationTokens.count
+        let categoryCount = appSelection.categoryTokens.count
+
+        if appCount > 0 && categoryCount > 0 {
+            let appText = appCount == 1 ? "1 app" : "\(appCount) apps"
+            let categoryText = categoryCount == 1 ? "1 category" : "\(categoryCount) categories"
+            return "\(appText), \(categoryText)"
+        } else if appCount > 0 {
+            return appCount == 1 ? "1 app" : "\(appCount) apps"
+        } else if categoryCount > 0 {
+            return categoryCount == 1 ? "1 category" : "\(categoryCount) categories"
+        }
+        return ""
+    }
 
     private var strictnessIcon: String {
         switch strictnessLevel {

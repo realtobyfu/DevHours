@@ -179,7 +179,6 @@ final class RecurrenceService {
             title: parent.title,
             plannedDate: date,
             estimatedDuration: parent.estimatedDuration,
-            project: parent.project,
             parentTaskId: parent.id,
             tags: parent.tags ?? []
         )

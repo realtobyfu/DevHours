@@ -21,12 +21,6 @@ struct SettingsView: View {
             List {
                 Section("Organization") {
                     NavigationLink {
-                        ProjectsListView()
-                    } label: {
-                        Label("Manage Projects", systemImage: "folder")
-                    }
-
-                    NavigationLink {
                         TagsListView()
                     } label: {
                         Label("Manage Tags", systemImage: "tag")

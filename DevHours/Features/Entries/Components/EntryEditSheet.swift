@@ -14,11 +14,6 @@ struct EntryEditSheet: View {
 
     @Bindable var entry: TimeEntry
 
-    // Query all projects for picker (iOS only)
-    #if os(iOS)
-    @Query(sort: \Project.name) private var allProjects: [Project]
-    #endif
-
     // Query all tags for picker
     @Query(sort: \Tag.name) private var allTags: [Tag]
 
@@ -102,19 +97,6 @@ struct EntryEditSheet: View {
                         }
                     }
                 }
-
-                // Project Section (iOS only - pickers cause issues on macOS)
-                #if os(iOS)
-                Section("Project") {
-                    Picker("Project", selection: $entry.project) {
-                        Text("None").tag(nil as Project?)
-                        ForEach(allProjects) { project in
-                            Text(project.name).tag(project as Project?)
-                        }
-                    }
-                    .pickerStyle(.menu)
-                }
-                #endif
 
                 // Tags Section
                 Section {

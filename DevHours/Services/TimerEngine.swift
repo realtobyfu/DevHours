@@ -52,7 +52,6 @@ final class TimerEngine {
     func startTimer(
         title: String = "",
         client: Client? = nil,
-        project: Project? = nil,
         sourcePlannedTask: PlannedTask? = nil
     ) {
         guard !isRunning else { return }
@@ -61,8 +60,7 @@ final class TimerEngine {
             startTime: Date.now,
             endTime: nil,  // Key: nil = running timer
             title: title,
-            client: client,
-            project: project
+            client: client
         )
 
         modelContext.insert(entry)
@@ -81,7 +79,7 @@ final class TimerEngine {
         startTickTimer()
 
         // Start Live Activity
-        startLiveActivity(title: title, projectName: project?.name, startTime: entry.startTime)
+        startLiveActivity(title: title, startTime: entry.startTime)
 
         // Sync widget data
         SharedDataManager.shared.updateWidgetData()
@@ -164,7 +162,7 @@ final class TimerEngine {
         guard let entry = runningEntry else { return }
         entry.title = title
         try? modelContext.save()
-        updateLiveActivity(title: title, projectName: entry.project?.name)
+        updateLiveActivity(title: title)
     }
 
     // MARK: - Private Helpers
@@ -220,15 +218,14 @@ final class TimerEngine {
 
     // MARK: - Live Activity
     #if !os(macOS)
-    private func startLiveActivity(title: String, projectName: String?, startTime: Date) {
+    private func startLiveActivity(title: String, startTime: Date) {
         guard ActivityAuthorizationInfo().areActivitiesEnabled else {
             print("TimerEngine: Live Activities not enabled")
             return
         }
 
         let attributes = TimerActivityAttributes(
-            taskTitle: title,
-            projectName: projectName
+            taskTitle: title
         )
 
         let initialState = TimerActivityAttributes.ContentState(
@@ -236,8 +233,7 @@ final class TimerEngine {
             isRunning: true,
             isPaused: false,
             elapsedAtPause: nil,
-            taskTitle: title,
-            projectName: projectName
+            taskTitle: title
         )
 
         let content = ActivityContent(
@@ -273,8 +269,7 @@ final class TimerEngine {
             isRunning: false,
             isPaused: false,
             elapsedAtPause: nil,
-            taskTitle: activity.content.state.taskTitle,
-            projectName: activity.content.state.projectName
+            taskTitle: activity.content.state.taskTitle
         )
 
         Task {
@@ -288,7 +283,7 @@ final class TimerEngine {
         currentActivity = nil
     }
 
-    private func updateLiveActivity(title: String, projectName: String?) {
+    private func updateLiveActivity(title: String) {
         guard let activity = currentActivity else { return }
 
         let updatedState = TimerActivityAttributes.ContentState(
@@ -296,8 +291,7 @@ final class TimerEngine {
             isRunning: true,
             isPaused: false,
             elapsedAtPause: nil,
-            taskTitle: title,
-            projectName: projectName
+            taskTitle: title
         )
 
         Task {
@@ -314,8 +308,7 @@ final class TimerEngine {
             isRunning: false,
             isPaused: true,
             elapsedAtPause: entry.duration,  // Freeze at current duration
-            taskTitle: activity.content.state.taskTitle,
-            projectName: activity.content.state.projectName
+            taskTitle: activity.content.state.taskTitle
         )
 
         Task {
@@ -336,8 +329,7 @@ final class TimerEngine {
             isRunning: true,
             isPaused: false,
             elapsedAtPause: nil,
-            taskTitle: activity.content.state.taskTitle,
-            projectName: activity.content.state.projectName
+            taskTitle: activity.content.state.taskTitle
         )
 
         Task {
@@ -368,7 +360,6 @@ final class TimerEngine {
         } else {
             startLiveActivity(
                 title: entry.title,
-                projectName: entry.project?.name,
                 startTime: entry.startTime
             )
         }
@@ -378,8 +369,7 @@ final class TimerEngine {
         guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
 
         let attributes = TimerActivityAttributes(
-            taskTitle: entry.title,
-            projectName: entry.project?.name
+            taskTitle: entry.title
         )
 
         let pausedState = TimerActivityAttributes.ContentState(
@@ -387,8 +377,7 @@ final class TimerEngine {
             isRunning: false,
             isPaused: true,
             elapsedAtPause: entry.duration,
-            taskTitle: entry.title,
-            projectName: entry.project?.name
+            taskTitle: entry.title
         )
 
         let content = ActivityContent(state: pausedState, staleDate: nil)
@@ -404,9 +393,9 @@ final class TimerEngine {
         }
     }
     #else
-    private func startLiveActivity(title: String, projectName: String?, startTime: Date) {}
+    private func startLiveActivity(title: String, startTime: Date) {}
     private func endLiveActivity() {}
-    private func updateLiveActivity(title: String, projectName: String?) {}
+    private func updateLiveActivity(title: String) {}
     private func updateLiveActivityPaused() {}
     private func updateLiveActivityResumed() {}
     private func restoreLiveActivityIfNeeded() {}

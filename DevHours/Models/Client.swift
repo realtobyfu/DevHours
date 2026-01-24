@@ -14,10 +14,6 @@ final class Client {
     var name: String = ""
     var createdAt: Date = Date.now
 
-    // Relationship: one client has many projects
-    @Relationship(deleteRule: .cascade, inverse: \Project.client)
-    var projects: [Project]?
-
     // Relationship: one client has many time entries
     @Relationship(deleteRule: .nullify, inverse: \TimeEntry.client)
     var timeEntries: [TimeEntry]?

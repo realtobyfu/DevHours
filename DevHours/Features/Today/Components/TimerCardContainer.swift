@@ -56,29 +56,9 @@ struct TimerCardContainer: View {
                     .lineLimit(isCompact ? 1 : 2)
                     .matchedGeometryEffect(id: "title-\(task.id)", in: animation)
 
-                if isCompact {
-                    // Compact: just duration below title
-                    durationChip(task)
-                        .matchedGeometryEffect(id: "duration-\(task.id)", in: animation)
-                } else {
-                    // Full: duration + project in HStack
-                    HStack(spacing: 8) {
-                        durationChip(task)
-                            .matchedGeometryEffect(id: "duration-\(task.id)", in: animation)
-
-                        if let project = task.project {
-                            Text(project.name)
-                                .font(.caption)
-                                .foregroundStyle(.tertiary)
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 4)
-                                .background(
-                                    Capsule()
-                                        .fill(Color.secondary.opacity(0.1))
-                                )
-                        }
-                    }
-                }
+                // Duration chip below title
+                durationChip(task)
+                    .matchedGeometryEffect(id: "duration-\(task.id)", in: animation)
             }
 
             Spacer(minLength: 4)

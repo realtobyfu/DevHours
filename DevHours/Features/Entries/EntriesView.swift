@@ -28,8 +28,7 @@ struct EntriesView: View {
         if !searchText.isEmpty {
             results = results.filter { entry in
                 entry.title.localizedCaseInsensitiveContains(searchText) ||
-                entry.client?.name.localizedCaseInsensitiveContains(searchText) == true ||
-                entry.project?.name.localizedCaseInsensitiveContains(searchText) == true
+                entry.client?.name.localizedCaseInsensitiveContains(searchText) == true
             }
         }
         return results

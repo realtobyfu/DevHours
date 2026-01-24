@@ -20,8 +20,8 @@ struct PremiumUpsellSheet: View {
     @State private var errorMessage = ""
 
     init(
-        title: String = "Unlock Premium",
-        subtitle: String = "Get the most out of your focus time",
+        title: String = "Premium",
+        subtitle: String = "One-time purchase, lifetime access",
         highlightedFeature: PremiumFeature? = nil
     ) {
         self.title = title
@@ -31,19 +31,22 @@ struct PremiumUpsellSheet: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(spacing: 24) {
-                    // Header
-                    headerSection
+            VStack(spacing: 0) {
+                ScrollView {
+                    VStack(spacing: 32) {
+                        // Header
+                        headerSection
 
-                    // Feature List
-                    featureListSection
-
-                    // CTA Button
-                    ctaSection
+                        // Feature List
+                        featureListSection
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.top, 8)
+                    .padding(.bottom, 24)
                 }
-                .padding(.horizontal, 24)
-                .padding(.vertical, 16)
+
+                // Fixed bottom CTA
+                ctaSection
             }
             .navigationTitle("")
             #if os(iOS)
@@ -56,7 +59,7 @@ struct PremiumUpsellSheet: View {
                     } label: {
                         Image(systemName: "xmark.circle.fill")
                             .font(.title2)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(.tertiary)
                     }
                 }
             }
@@ -76,64 +79,35 @@ struct PremiumUpsellSheet: View {
     // MARK: - Header Section
 
     private var headerSection: some View {
-        VStack(spacing: 16) {
-            ZStack {
-                Circle()
-                    .fill(
-                        LinearGradient(
-                            colors: [Color.accentColor, Color.purple],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                    .frame(width: 80, height: 80)
+        VStack(spacing: 12) {
+            Text(title)
+                .font(.title2)
+                .fontWeight(.semibold)
 
-                Image(systemName: "sparkles")
-                    .font(.system(size: 36, weight: .medium))
-                    .foregroundStyle(.white)
-            }
-
-            VStack(spacing: 8) {
-                Text(title)
-                    .font(.title)
-                    .fontWeight(.bold)
-
-                Text(subtitle)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-            }
+            Text(subtitle)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
         }
-        .padding(.top, 16)
+        .padding(.top, 8)
     }
 
     // MARK: - Feature List Section
 
     private var featureListSection: some View {
-        VStack(spacing: 0) {
+        VStack(alignment: .leading, spacing: 16) {
             ForEach(displayedFeatures, id: \.self) { feature in
                 FeatureRow(
                     feature: feature,
                     isHighlighted: feature == highlightedFeature
                 )
-
-                if feature != displayedFeatures.last {
-                    Divider()
-                        .padding(.leading, 52)
-                }
             }
         }
-        #if os(iOS)
-        .background(Color(.secondarySystemBackground))
-        #else
-        .background(Color.secondary.opacity(0.08))
-        #endif
-        .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 
     private var displayedFeatures: [PremiumFeature] {
         // Show highlighted feature first if present
-        var features = PremiumFeature.allCases.filter { $0 != .scheduledFocus } // Hide future features
+        var features = PremiumFeature.allCases.filter { $0 != .scheduledFocus }
         if let highlighted = highlightedFeature,
            let index = features.firstIndex(of: highlighted) {
             features.remove(at: index)
@@ -145,24 +119,8 @@ struct PremiumUpsellSheet: View {
     // MARK: - CTA Section
 
     private var ctaSection: some View {
-        VStack(spacing: 16) {
-            // Price display
-            VStack(spacing: 4) {
-                Text("One-Time Purchase")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-
-                Text(premiumManager.priceString)
-                    .font(.system(size: 44, weight: .bold, design: .rounded))
-                    .foregroundStyle(.primary)
-
-                Text("Lifetime Access")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-            .padding(.vertical, 8)
-
-            // Purchase button
+        VStack(spacing: 12) {
+            // Purchase button with price
             Button {
                 Task {
                     await purchaseLifetime()
@@ -172,12 +130,16 @@ struct PremiumUpsellSheet: View {
                     if isPurchasing || premiumManager.isLoading {
                         ProgressView()
                             .tint(.white)
+                    } else {
+                        Text("Upgrade")
+                        Text("·")
+                            .foregroundStyle(.white.opacity(0.5))
+                        Text(premiumManager.priceString)
                     }
-                    Text(isPurchasing ? "Processing..." : "Get Premium")
-                        .font(.headline)
                 }
+                .font(.body.weight(.medium))
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 16)
+                .padding(.vertical, 14)
             }
             .buttonStyle(.borderedProminent)
             .disabled(isPurchasing || premiumManager.isLoading)
@@ -188,18 +150,16 @@ struct PremiumUpsellSheet: View {
                     await restorePurchases()
                 }
             } label: {
-                Text("Restore Purchases")
+                Text("Restore Purchase")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
             .disabled(isPurchasing || premiumManager.isLoading)
-
-            Text("Pay once, own forever. No subscriptions.")
-                .font(.caption)
-                .foregroundStyle(.tertiary)
-                .multilineTextAlignment(.center)
         }
-        .padding(.top, 8)
+        .padding(.horizontal, 20)
+        .padding(.top, 12)
+        .padding(.bottom, 16)
+        .background(.bar)
     }
 
     // MARK: - Purchase Actions
@@ -242,48 +202,23 @@ private struct FeatureRow: View {
     let isHighlighted: Bool
 
     var body: some View {
-        HStack(spacing: 16) {
-            ZStack {
-                Circle()
-                    .fill(isHighlighted ? Color.accentColor.opacity(0.2) : Color.secondary.opacity(0.1))
-                    .frame(width: 36, height: 36)
-
-                Image(systemName: feature.iconName)
-                    .font(.body.weight(.medium))
-                    .foregroundStyle(isHighlighted ? Color.accentColor : .secondary)
-            }
+        HStack(spacing: 12) {
+            Image(systemName: feature.iconName)
+                .font(.body)
+                .foregroundStyle(isHighlighted ? Color.accentColor : .secondary)
+                .frame(width: 24)
 
             VStack(alignment: .leading, spacing: 2) {
-                HStack(spacing: 6) {
-                    Text(feature.rawValue)
-                        .font(.subheadline)
-                        .fontWeight(.medium)
-
-                    if isHighlighted {
-                        Text("NEW")
-                            .font(.caption2.weight(.semibold))
-                            .foregroundStyle(.white)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(Color.accentColor)
-                            .clipShape(Capsule())
-                    }
-                }
+                Text(feature.rawValue)
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+                    .foregroundStyle(isHighlighted ? .primary : .primary)
 
                 Text(feature.description)
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
-
-            Spacer()
-
-            Image(systemName: "checkmark")
-                .font(.body.weight(.medium))
-                .foregroundStyle(.green)
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
-        .background(isHighlighted ? Color.accentColor.opacity(0.05) : Color.clear)
     }
 }
 
@@ -293,8 +228,8 @@ extension PremiumUpsellSheet {
     /// Creates an upsell sheet for the session limit
     static var sessionLimit: PremiumUpsellSheet {
         PremiumUpsellSheet(
-            title: "Out of Free Sessions",
-            subtitle: "You've used all 3 free focus sessions this week",
+            title: "Weekly Limit Reached",
+            subtitle: "Free plan includes 3 sessions per week",
             highlightedFeature: .unlimitedSessions
         )
     }
@@ -302,8 +237,8 @@ extension PremiumUpsellSheet {
     /// Creates an upsell sheet for profile creation
     static var profileLimit: PremiumUpsellSheet {
         PremiumUpsellSheet(
-            title: "Create Custom Profiles",
-            subtitle: "Build focus profiles for different contexts",
+            title: "Custom Profiles",
+            subtitle: "Create profiles for different contexts",
             highlightedFeature: .customProfiles
         )
     }
@@ -311,8 +246,8 @@ extension PremiumUpsellSheet {
     /// Creates an upsell sheet for strictness levels
     static var strictnessLevels: PremiumUpsellSheet {
         PremiumUpsellSheet(
-            title: "More Control",
-            subtitle: "Choose how hard it is to unlock blocked apps",
+            title: "Strictness Levels",
+            subtitle: "Control how apps are blocked",
             highlightedFeature: .allStrictnessLevels
         )
     }
@@ -320,17 +255,17 @@ extension PremiumUpsellSheet {
     /// Creates an upsell sheet for stats access
     static var focusStats: PremiumUpsellSheet {
         PremiumUpsellSheet(
-            title: "Track Your Progress",
-            subtitle: "See detailed focus statistics and achievements",
+            title: "Focus Stats",
+            subtitle: "View your focus history and trends",
             highlightedFeature: .focusStats
         )
     }
 }
 
 #Preview {
-    PremiumUpsellSheet(
-        title: "Unlock Premium",
-        subtitle: "Get the most out of your focus time",
-        highlightedFeature: .unlimitedSessions
-    )
+    PremiumUpsellSheet()
+}
+
+#Preview("Session Limit") {
+    PremiumUpsellSheet.sessionLimit
 }
