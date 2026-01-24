@@ -260,6 +260,7 @@ struct TimerCardContainer: View {
         task.isCompleted = true
         task.completedAt = Date.now
         try? modelContext.save()
+        SharedDataManager.shared.updateWidgetData()
     }
 
     private func deleteTask(_ task: PlannedTask) {
@@ -268,5 +269,6 @@ struct TimerCardContainer: View {
         }
         modelContext.delete(task)
         try? modelContext.save()
+        SharedDataManager.shared.updateWidgetData()
     }
 }

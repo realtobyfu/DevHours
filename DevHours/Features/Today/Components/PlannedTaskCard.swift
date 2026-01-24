@@ -131,6 +131,7 @@ struct PlannedTaskCard: View {
 
         do {
             try modelContext.save()
+            SharedDataManager.shared.updateWidgetData()
         } catch {
             print("Error marking task complete: \(error)")
         }
@@ -144,6 +145,7 @@ struct PlannedTaskCard: View {
 
         do {
             try modelContext.save()
+            SharedDataManager.shared.updateWidgetData()
         } catch {
             print("Error deleting task: \(error)")
         }
