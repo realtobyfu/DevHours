@@ -2,17 +2,27 @@
 //  ShieldConfigurationExtension.swift
 //  DevHoursShieldExtension
 //
-//  Provides custom shield configuration for blocked apps.
+//  Provides profile-specific shield configuration.
+//  Reads session data from shared UserDefaults to apply profile theming.
 //
 
-import Foundation
 import ManagedSettings
 import ManagedSettingsUI
 import UIKit
 
-class ShieldConfigurationExtension: ShieldConfigurationDataSource {
+// MARK: - Session Data (minimal struct for decoding shared session)
 
-    // App Group for reading session data from main app
+private struct SessionData: Decodable {
+    let profileName: String
+    let profileIconName: String
+    let profileColorHex: String
+    let customMessage: String?
+}
+
+// MARK: - Extension
+
+nonisolated class ShieldConfigurationExtension: ShieldConfigurationDataSource {
+
     private let appGroupID = "group.com.tobiasfu.DevHours"
 
     override func configuration(shielding application: Application) -> ShieldConfiguration {
@@ -32,108 +42,77 @@ class ShieldConfigurationExtension: ShieldConfigurationDataSource {
     }
 
     private func makeConfiguration() -> ShieldConfiguration {
-        let sessionData = loadSessionData()
-
-        // Build subtitle with session info
-        let subtitle: String
-        if let data = sessionData {
-            let elapsed = Int(Date().timeIntervalSince(data.startTime))
-            let minutes = elapsed / 60
-            if let customMessage = data.customMessage, !customMessage.isEmpty {
-                subtitle = customMessage
-            } else if minutes > 0 {
-                subtitle = "You're \(minutes) min into \(data.profileName). \(getRandomMessage())"
-            } else {
-                subtitle = getRandomMessage()
-            }
-        } else {
-            subtitle = getRandomMessage()
+        guard let defaults = UserDefaults(suiteName: appGroupID) else {
+            return makeDefaultConfiguration()
         }
 
-        // Load app icon from bundle
-        let appIcon = UIImage(named: "AppIcon") ?? UIImage(systemName: "timer")
+        // Try to read session data for profile-specific theming
+        guard let sessionJSON = defaults.data(forKey: "currentFocusSession"),
+              let session = try? JSONDecoder().decode(SessionData.self, from: sessionJSON) else {
+            return makeDefaultConfiguration()
+        }
+
+        // Apply profile-specific theming
+        let profileColor = colorFromHex(session.profileColorHex)
+        let subtitle = session.customMessage ?? "Stay focused! You've got this."
 
         return ShieldConfiguration(
-            backgroundBlurStyle: .systemThickMaterial,
-            backgroundColor: UIColor.systemBackground,
-            icon: appIcon,
+            backgroundBlurStyle: .systemUltraThinMaterialDark,
+            backgroundColor: profileColor.withAlphaComponent(0.1),
+            icon: UIImage(systemName: session.profileIconName),
             title: ShieldConfiguration.Label(
-                text: "Taking a Focus Break",
-                color: UIColor.label
+                text: session.profileName,
+                color: profileColor
             ),
             subtitle: ShieldConfiguration.Label(
                 text: subtitle,
-                color: UIColor.secondaryLabel
+                color: UIColor.label
             ),
             primaryButtonLabel: ShieldConfiguration.Label(
-                text: "Back to Task",
+                text: "Go Back",
                 color: UIColor.white
             ),
-            primaryButtonBackgroundColor: UIColor.systemBlue,
-            secondaryButtonLabel: secondaryButtonLabel(for: sessionData)
+            primaryButtonBackgroundColor: profileColor
         )
     }
 
-    private func secondaryButtonLabel(for sessionData: FocusSessionSharedData?) -> ShieldConfiguration.Label? {
-        guard let data = sessionData else {
-            return ShieldConfiguration.Label(
-                text: "End Focus Session",
-                color: UIColor.systemRed
-            )
-        }
-
-        // Check strictness level
-        switch data.strictnessLevel {
-        case "locked":
-            // No option for locked sessions - stay focused!
-            return nil
-        case "firm":
-            return ShieldConfiguration.Label(
-                text: "End Session",
-                color: UIColor.systemRed
-            )
-        default: // gentle
-            return ShieldConfiguration.Label(
-                text: "End Focus Session",
-                color: UIColor.systemRed
-            )
-        }
+    private func makeDefaultConfiguration() -> ShieldConfiguration {
+        return ShieldConfiguration(
+            backgroundBlurStyle: .systemUltraThinMaterialDark,
+            backgroundColor: UIColor.systemIndigo.withAlphaComponent(0.1),
+            icon: UIImage(systemName: "sparkles"),
+            title: ShieldConfiguration.Label(
+                text: "Focus Mode",
+                color: UIColor.systemIndigo
+            ),
+            subtitle: ShieldConfiguration.Label(
+                text: "Stay focused! You've got this.",
+                color: UIColor.label
+            ),
+            primaryButtonLabel: ShieldConfiguration.Label(
+                text: "Go Back",
+                color: UIColor.white
+            ),
+            primaryButtonBackgroundColor: UIColor.systemIndigo
+        )
     }
 
-    private func loadSessionData() -> FocusSessionSharedData? {
-        guard let defaults = UserDefaults(suiteName: appGroupID),
-              let data = defaults.data(forKey: "currentFocusSession") else {
-            return nil
+    // MARK: - Hex Color Conversion
+
+    private func colorFromHex(_ hex: String) -> UIColor {
+        let cleanHex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
+        var int: UInt64 = 0
+        Scanner(string: cleanHex).scanHexInt64(&int)
+
+        let r, g, b: CGFloat
+        switch cleanHex.count {
+        case 6:
+            r = CGFloat((int >> 16) & 0xFF) / 255.0
+            g = CGFloat((int >> 8) & 0xFF) / 255.0
+            b = CGFloat(int & 0xFF) / 255.0
+        default:
+            return .systemIndigo
         }
-        return try? JSONDecoder().decode(FocusSessionSharedData.self, from: data)
+        return UIColor(red: r, green: g, blue: b, alpha: 1.0)
     }
-
-    private func getRandomMessage() -> String {
-        let messages = [
-            "Your future self will thank you.",
-            "Deep work is a superpower.",
-            "This urge will pass in 60 seconds.",
-            "You chose focus. Honor that choice.",
-            "Boredom sparks creativity.",
-            "The scroll can wait.",
-            "Small distractions, big costs.",
-            "You're building something great.",
-            "Stay present. Stay powerful.",
-            "Your attention is valuable.",
-        ]
-        return messages.randomElement() ?? messages[0]
-    }
-}
-
-// MARK: - Shared Data Model (must match main app)
-
-struct FocusSessionSharedData: Codable {
-    let sessionId: UUID
-    let profileName: String
-    let profileIconName: String
-    let profileColorHex: String
-    let startTime: Date
-    let plannedDuration: TimeInterval?
-    let customMessage: String?
-    let strictnessLevel: String
 }

@@ -7,6 +7,9 @@
 
 import SwiftUI
 import SwiftData
+#if !os(macOS)
+import FamilyControls
+#endif
 
 struct FocusToggleRow: View {
     @Environment(FocusBlockingService.self) private var focusService
@@ -219,10 +222,25 @@ private struct ProfilePickerRow: View {
             Text(profile.name)
                 .font(.headline)
                 .foregroundStyle(.primary)
-            Text(profile.strictnessLevel.displayName)
+            Text(profileSubtitle)
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
+    }
+
+    private var profileSubtitle: String {
+        #if !os(macOS)
+        guard let selection = profile.blockedApps else { return "No apps blocked" }
+        let appCount = selection.applicationTokens.count
+        let categoryCount = selection.categoryTokens.count
+        if appCount == 0 && categoryCount == 0 { return "No apps blocked" }
+        var parts: [String] = []
+        if appCount > 0 { parts.append(appCount == 1 ? "1 app" : "\(appCount) apps") }
+        if categoryCount > 0 { parts.append(categoryCount == 1 ? "1 category" : "\(categoryCount) categories") }
+        return parts.joined(separator: ", ")
+        #else
+        return ""
+        #endif
     }
 
     @ViewBuilder

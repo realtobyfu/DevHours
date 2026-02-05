@@ -22,7 +22,6 @@ struct FocusProfileEditView: View {
     @State private var name: String = ""
     @State private var iconName: String = "brain.head.profile"
     @State private var colorHex: String = "#5E35B1"
-    @State private var strictnessLevel: StrictnessLevel = .firm
     @State private var customMessage: String = ""
     @State private var appSelection = FamilyActivitySelection()
     @State private var showingAppPicker = false
@@ -148,32 +147,6 @@ struct FocusProfileEditView: View {
                 Text("Choose which apps and categories to block during focus sessions with this profile.")
             }
 
-            // Strictness Section
-            Section {
-                Picker("Strictness", selection: $strictnessLevel) {
-                    ForEach(StrictnessLevel.allCases, id: \.self) { level in
-                        VStack(alignment: .leading) {
-                            Text(level.displayName)
-                        }
-                        .tag(level)
-                    }
-                }
-
-                // Strictness description
-                HStack {
-                    Image(systemName: strictnessIcon)
-                        .foregroundStyle(strictnessColor)
-
-                    Text(strictnessLevel.description)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            } header: {
-                Text("Override Behavior")
-            } footer: {
-                Text("This controls how easy it is to unlock blocked apps during a session.")
-            }
-
             // Custom Message Section
             if premiumManager.isPremium {
                 Section {
@@ -241,22 +214,6 @@ struct FocusProfileEditView: View {
         return ""
     }
 
-    private var strictnessIcon: String {
-        switch strictnessLevel {
-        case .gentle: return "hand.tap"
-        case .firm: return "hand.raised.fill"
-        case .locked: return "lock.fill"
-        }
-    }
-
-    private var strictnessColor: Color {
-        switch strictnessLevel {
-        case .gentle: return .green
-        case .firm: return .orange
-        case .locked: return .red
-        }
-    }
-
     // MARK: - Actions
 
     private func loadProfile() {
@@ -264,7 +221,6 @@ struct FocusProfileEditView: View {
         name = profile.name
         iconName = profile.iconName
         colorHex = profile.colorHex
-        strictnessLevel = profile.strictnessLevel
         customMessage = profile.customShieldMessage ?? ""
         if let selection = profile.blockedApps {
             appSelection = selection
@@ -280,7 +236,6 @@ struct FocusProfileEditView: View {
             existingProfile.name = trimmedName
             existingProfile.iconName = iconName
             existingProfile.colorHex = colorHex
-            existingProfile.strictnessLevel = strictnessLevel
             existingProfile.customShieldMessage = customMessage.isEmpty ? nil : customMessage
             existingProfile.blockedApps = appSelection
         } else {
@@ -289,7 +244,6 @@ struct FocusProfileEditView: View {
                 name: trimmedName,
                 iconName: iconName,
                 colorHex: colorHex,
-                strictnessLevel: strictnessLevel,
                 customShieldMessage: customMessage.isEmpty ? nil : customMessage,
                 isDefault: false,
                 sortOrder: 100  // Put custom profiles after defaults

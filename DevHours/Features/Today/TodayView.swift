@@ -271,10 +271,16 @@ struct TodayView: View {
 
     private func pauseTimer() {
         timerEngine.pauseTimer()
+        if focusService.isBlocking {
+            focusService.pauseBlocking()
+        }
     }
 
     private func resumeTimer() {
         timerEngine.resumeTimer()
+        if focusService.isBlocking {
+            focusService.resumeBlocking()
+        }
     }
 
     private func deleteEntry(_ entry: TimeEntry) {

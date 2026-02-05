@@ -15,10 +15,44 @@ struct SettingsView: View {
     @Environment(PremiumManager.self) private var premiumManager
 
     @State private var showingOnboarding = false
+    @State private var showingPaywall = false
 
     var body: some View {
         NavigationStack {
             List {
+                Section("Premium") {
+                    if premiumManager.isPremium {
+                        HStack {
+                            Label("Premium", systemImage: "star.fill")
+                                .foregroundStyle(.orange)
+                            Spacer()
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundStyle(.green)
+                        }
+                    } else {
+                        Button {
+                            showingPaywall = true
+                        } label: {
+                            HStack {
+                                Image(systemName: "star.fill")
+                                    .foregroundStyle(.orange)
+                                Text("Upgrade to Premium")
+                                    .font(.body)
+                                    .fontWeight(.semibold)
+                                Spacer()
+                                Text(premiumManager.priceString)
+                                    .font(.caption)
+                                    .fontWeight(.medium)
+                                    .foregroundStyle(.white)
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 4)
+                                    .background(Color.accentColor)
+                                    .clipShape(Capsule())
+                            }
+                        }
+                    }
+                }
+
                 Section("Organization") {
                     NavigationLink {
                         TagsListView()
@@ -56,14 +90,6 @@ struct SettingsView: View {
                             }
                         }
 
-                        // Default strictness picker
-                        Picker(selection: .constant(StrictnessLevel.firm)) {
-                            ForEach(StrictnessLevel.allCases, id: \.self) { level in
-                                Text(level.displayName).tag(level)
-                            }
-                        } label: {
-                            Label("Default Strictness", systemImage: "lock.fill")
-                        }
                     } else {
                         Button {
                             showingOnboarding = true
@@ -138,6 +164,9 @@ struct SettingsView: View {
             #if os(iOS)
             .navigationBarTitleDisplayMode(.large)
             #endif
+            .sheet(isPresented: $showingPaywall) {
+                PremiumUpsellSheet()
+            }
             #if !os(macOS)
             .sheet(isPresented: $showingOnboarding) {
                 FocusOnboardingView {

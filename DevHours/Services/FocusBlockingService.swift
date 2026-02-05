@@ -37,6 +37,7 @@ final class FocusBlockingService {
     init(modelContext: ModelContext) {
         self.modelContext = modelContext
         checkAuthorizationStatus()
+        restoreBlockingStateIfNeeded()
     }
 
     // MARK: - Authorization
@@ -78,7 +79,6 @@ final class FocusBlockingService {
     }
 
     /// Request Screen Time authorization from user
-    @MainActor
     func requestAuthorization() async -> Bool {
         do {
             try await center.requestAuthorization(for: .individual)
@@ -175,24 +175,16 @@ final class FocusBlockingService {
     }
 
     /// Check if shield extension requested to end session (call on app foreground)
+    /// Simplified: just check for the end session flag and end immediately
     func checkForEndSessionRequest() {
         guard isBlocking else { return }
 
         guard let defaults = UserDefaults(suiteName: appGroupID) else { return }
 
+        // Check for end session request from shield
         if defaults.bool(forKey: "shouldEndFocusSession") {
             // Clear the flag
             defaults.removeObject(forKey: "shouldEndFocusSession")
-            defaults.removeObject(forKey: "endSessionRequestTime")
-
-            // Process any pending overrides
-            let overrideCount = defaults.integer(forKey: "pendingOverrideCount")
-            if overrideCount > 0 {
-                for _ in 0..<overrideCount {
-                    currentSession?.recordOverride()
-                }
-                defaults.set(0, forKey: "pendingOverrideCount")
-            }
 
             // End the session (not successful since user ended it early)
             stopBlocking(successful: false)
@@ -201,10 +193,40 @@ final class FocusBlockingService {
         }
     }
 
+    /// Re-apply blocking to ensure apps remain blocked
+    func reapplyBlocking() {
+        guard isBlocking, let profile = activeProfile else { return }
+        guard let selection = profile.blockedApps else { return }
+
+        // Re-apply the blocking to ensure it's still in effect
+        store.shield.applications = selection.applicationTokens
+        store.shield.applicationCategories = .specific(selection.categoryTokens)
+
+        print("FocusBlockingService: Re-applied blocking")
+    }
+
+    // MARK: - Pause / Resume Blocking
+
+    /// Temporarily remove shields (e.g. when user pauses timer)
+    func pauseBlocking() {
+        guard isBlocking else { return }
+        store.shield.applications = nil
+        store.shield.applicationCategories = nil
+    }
+
+    /// Re-apply shields (e.g. when user resumes timer)
+    func resumeBlocking() {
+        guard isBlocking else { return }
+        reapplyBlocking()
+    }
+
     // MARK: - Session State Sharing (for Shield Extension)
 
     private func updateSharedSessionState() {
         guard let session = currentSession, let profile = activeProfile else { return }
+
+        // Get stats for enhanced shield messaging
+        let stats = getStats()
 
         let sessionData = FocusSessionSharedData(
             sessionId: session.id,
@@ -214,7 +236,12 @@ final class FocusBlockingService {
             startTime: session.startTime,
             plannedDuration: session.plannedDuration,
             customMessage: profile.customShieldMessage,
-            strictnessLevel: profile.strictnessLevel.rawValue
+            strictnessLevel: profile.strictnessLevel.rawValue,
+            // Extended properties for enhanced shield messaging
+            linkedTaskTitle: nil, // Could be populated from linked TimeEntry
+            currentStreak: stats?.currentStreak,
+            weeklyFocusMinutes: stats?.totalFocusMinutes,
+            consecutiveSuccesses: nil // Could track zero-override sessions
         )
 
         if let defaults = UserDefaults(suiteName: appGroupID),
@@ -275,6 +302,54 @@ final class FocusBlockingService {
         try? modelContext.save()
         print("FocusBlockingService: Created default profiles")
     }
+
+    // MARK: - Crash Recovery
+
+    /// Restore in-memory blocking state from any persisted active FocusSession.
+    /// Handles crash/force-quit recovery: ManagedSettingsStore shields persist across
+    /// app restarts, but our in-memory state resets. This ensures the next
+    /// stopBlocking() call will properly clear the shields.
+    private func restoreBlockingStateIfNeeded() {
+        var descriptor = FetchDescriptor<FocusSession>(
+            predicate: #Predicate<FocusSession> { $0.endTime == nil },
+            sortBy: [SortDescriptor(\.startTime, order: .reverse)]
+        )
+        descriptor.fetchLimit = 1
+
+        guard let activeSession = try? modelContext.fetch(descriptor).first else { return }
+
+        currentSession = activeSession
+        activeProfile = activeSession.profile
+        isBlocking = true
+
+        print("FocusBlockingService: Restored active session from persistence (crash recovery)")
+    }
+
+    /// Unconditionally clear all ManagedSettingsStore shields and reset state.
+    /// Use as a nuclear recovery option when blocking is stuck.
+    func forceCleanup() {
+        store.shield.applications = nil
+        store.shield.applicationCategories = nil
+
+        // End any active persisted sessions
+        let descriptor = FetchDescriptor<FocusSession>(
+            predicate: #Predicate<FocusSession> { $0.endTime == nil }
+        )
+        if let activeSessions = try? modelContext.fetch(descriptor) {
+            for session in activeSessions {
+                session.end(successful: false)
+            }
+            try? modelContext.save()
+        }
+
+        currentSession = nil
+        activeProfile = nil
+        isBlocking = false
+
+        clearSharedSessionState()
+
+        print("FocusBlockingService: Force cleanup completed — all shields cleared")
+    }
 }
 #else
 @Observable
@@ -296,7 +371,6 @@ final class FocusBlockingService {
 
     func checkAuthorizationStatus() {}
 
-    @MainActor
     func requestAuthorization() async -> Bool {
         false
     }
@@ -324,6 +398,14 @@ final class FocusBlockingService {
     func recordOverride() {}
 
     func checkForEndSessionRequest() {}
+
+    func reapplyBlocking() {}
+
+    func pauseBlocking() {}
+
+    func resumeBlocking() {}
+
+    func forceCleanup() {}
 
     // MARK: - Stats
 
@@ -361,4 +443,39 @@ struct FocusSessionSharedData: Codable {
     let plannedDuration: TimeInterval?
     let customMessage: String?
     let strictnessLevel: String
+
+    // Extended properties for enhanced shield messaging
+    let linkedTaskTitle: String?
+    let currentStreak: Int?
+    let weeklyFocusMinutes: Int?
+    let consecutiveSuccesses: Int?
+
+    // Memberwise initializer with defaults for new properties
+    init(
+        sessionId: UUID,
+        profileName: String,
+        profileIconName: String,
+        profileColorHex: String,
+        startTime: Date,
+        plannedDuration: TimeInterval?,
+        customMessage: String?,
+        strictnessLevel: String,
+        linkedTaskTitle: String? = nil,
+        currentStreak: Int? = nil,
+        weeklyFocusMinutes: Int? = nil,
+        consecutiveSuccesses: Int? = nil
+    ) {
+        self.sessionId = sessionId
+        self.profileName = profileName
+        self.profileIconName = profileIconName
+        self.profileColorHex = profileColorHex
+        self.startTime = startTime
+        self.plannedDuration = plannedDuration
+        self.customMessage = customMessage
+        self.strictnessLevel = strictnessLevel
+        self.linkedTaskTitle = linkedTaskTitle
+        self.currentStreak = currentStreak
+        self.weeklyFocusMinutes = weeklyFocusMinutes
+        self.consecutiveSuccesses = consecutiveSuccesses
+    }
 }

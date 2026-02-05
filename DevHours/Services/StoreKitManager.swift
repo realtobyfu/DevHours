@@ -61,7 +61,6 @@ final class StoreKitManager {
     // MARK: - Public Methods
 
     /// Load available products from App Store
-    @MainActor
     func loadProducts() async {
         isLoading = true
         purchaseError = nil
@@ -79,7 +78,6 @@ final class StoreKitManager {
     }
 
     /// Purchase the lifetime product
-    @MainActor
     func purchaseLifetime() async -> Bool {
         guard let product = lifetimeProduct else {
             purchaseError = "Product not available. Please try again."
@@ -132,7 +130,6 @@ final class StoreKitManager {
     }
 
     /// Restore previous purchases
-    @MainActor
     func restorePurchases() async {
         isLoading = true
         purchaseError = nil
@@ -150,7 +147,6 @@ final class StoreKitManager {
     }
 
     /// Check current entitlements
-    @MainActor
     func checkEntitlements() async {
         var newPurchasedIDs: Set<String> = []
 
@@ -181,16 +177,16 @@ final class StoreKitManager {
                 do {
                     let transaction = try self?.checkVerified(result)
 
-                    // Update entitlements on main actor
-                    await MainActor.run {
-                        if let productID = transaction?.productID,
-                           productID == StoreKitManager.lifetimeProductID {
-                            if transaction?.revocationDate != nil {
-                                // Purchase was revoked/refunded
-                                self?.purchasedProductIDs.remove(productID)
+                    // Bind self and transaction to local lets for Sendable safety
+                    if let strongSelf = self,
+                       let productID = transaction?.productID,
+                       productID == StoreKitManager.lifetimeProductID {
+                        let revoked = transaction?.revocationDate != nil
+                        await MainActor.run {
+                            if revoked {
+                                strongSelf.purchasedProductIDs.remove(productID)
                             } else {
-                                // Active purchase
-                                self?.purchasedProductIDs.insert(productID)
+                                strongSelf.purchasedProductIDs.insert(productID)
                             }
                         }
                     }
@@ -204,7 +200,7 @@ final class StoreKitManager {
     }
 
     /// Verify a transaction
-    private func checkVerified<T>(_ result: VerificationResult<T>) throws -> T {
+    nonisolated private func checkVerified<T>(_ result: VerificationResult<T>) throws -> T {
         switch result {
         case .unverified(_, let error):
             throw error

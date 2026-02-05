@@ -35,7 +35,7 @@ struct MainTabView: View {
                 Label(item.rawValue, systemImage: item.icon)
                     .tag(item)
             }
-            .navigationTitle("DevHours")
+            .navigationTitle("Clockwise")
         } detail: {
             switch selection {
             case .today:
@@ -63,7 +63,7 @@ struct MainTabView: View {
                     Label(item.rawValue, systemImage: item.icon)
                         .tag(item)
                 }
-                .navigationTitle("DevHours")
+                .navigationTitle("Clockwise")
             } detail: {
                 switch selection {
                 case .today:

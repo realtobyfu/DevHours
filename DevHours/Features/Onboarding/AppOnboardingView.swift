@@ -88,7 +88,7 @@ struct AppOnboardingView: View {
             .shadow(color: Color.black.opacity(0.2), radius: 20, y: 10)
 
             VStack(spacing: 12) {
-                Text("Welcome to DevHours")
+                Text("Welcome to Clockwise")
                     .font(.largeTitle)
                     .fontWeight(.bold)
 

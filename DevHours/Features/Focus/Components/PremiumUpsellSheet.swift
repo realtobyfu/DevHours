@@ -79,13 +79,30 @@ struct PremiumUpsellSheet: View {
     // MARK: - Header Section
 
     private var headerSection: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: 16) {
+            // Hero icon
+            ZStack {
+                Circle()
+                    .fill(
+                        LinearGradient(
+                            colors: [.orange, .yellow],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .frame(width: 60, height: 60)
+
+                Image(systemName: "star.fill")
+                    .font(.system(size: 30))
+                    .foregroundStyle(.white)
+            }
+
             Text(title)
-                .font(.title2)
-                .fontWeight(.semibold)
+                .font(.title)
+                .fontWeight(.bold)
 
             Text(subtitle)
-                .font(.subheadline)
+                .font(.callout)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
         }
@@ -120,6 +137,10 @@ struct PremiumUpsellSheet: View {
 
     private var ctaSection: some View {
         VStack(spacing: 12) {
+            Text("Lifetime Access")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
             // Purchase button with price
             Button {
                 Task {
@@ -137,7 +158,7 @@ struct PremiumUpsellSheet: View {
                         Text(premiumManager.priceString)
                     }
                 }
-                .font(.body.weight(.medium))
+                .font(.headline)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 14)
             }
@@ -203,21 +224,14 @@ private struct FeatureRow: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            Image(systemName: feature.iconName)
-                .font(.body)
+            Image(systemName: "checkmark.circle.fill")
+                .font(.system(size: 20))
                 .foregroundStyle(isHighlighted ? Color.accentColor : .secondary)
-                .frame(width: 24)
+                .frame(width: 28)
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text(feature.rawValue)
-                    .font(.subheadline)
-                    .fontWeight(.medium)
-                    .foregroundStyle(isHighlighted ? .primary : .primary)
-
-                Text(feature.description)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
+            Text(feature.rawValue)
+                .font(.body)
+                .fontWeight(.medium)
         }
     }
 }
@@ -240,15 +254,6 @@ extension PremiumUpsellSheet {
             title: "Custom Profiles",
             subtitle: "Create profiles for different contexts",
             highlightedFeature: .customProfiles
-        )
-    }
-
-    /// Creates an upsell sheet for strictness levels
-    static var strictnessLevels: PremiumUpsellSheet {
-        PremiumUpsellSheet(
-            title: "Strictness Levels",
-            subtitle: "Control how apps are blocked",
-            highlightedFeature: .allStrictnessLevels
         )
     }
 

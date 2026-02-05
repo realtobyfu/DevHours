@@ -42,6 +42,12 @@ struct DevHoursApp: App {
                     if newPhase == .active {
                         // Check if shield requested to end focus session
                         focusBlockingService.checkForEndSessionRequest()
+
+                        // Safety-net: if blocking is active but timer is not running,
+                        // the timer was stopped without clearing shields (e.g. crash, race condition).
+                        if focusBlockingService.isBlocking && timerEngine.runningEntry == nil {
+                            focusBlockingService.stopBlocking(successful: true)
+                        }
                     }
                 }
                 #if os(iOS)
@@ -61,14 +67,12 @@ struct DevHoursApp: App {
         .modelContainer(SharedDataManager.shared.sharedModelContainer)
     }
 
-    @MainActor
     private func initializeRecurringTasks() {
         let service = RecurrenceService(modelContext: SharedDataManager.shared.modelContext)
         service.generateRecurringInstances()
         service.cleanupOldInstances()
     }
 
-    @MainActor
     private func initializeFocusMode() {
         // Configure premium manager with focus service
         premiumManager.configure(with: focusBlockingService)
@@ -85,17 +89,22 @@ struct DevHoursApp: App {
         }
     }
 
-    @MainActor
     private func handleDeepLink(_ url: URL) {
         guard url.scheme == "devhours" else { return }
 
         switch url.host {
         case "stop-timer":
+            focusBlockingService.stopBlocking(successful: true)
             timerEngine.stopTimer()
         case "pause-timer":
+            focusBlockingService.pauseBlocking()
             timerEngine.pauseTimer()
         case "resume-timer":
+            focusBlockingService.resumeBlocking()
             timerEngine.resumeTimer()
+        case "end-focus":
+            // End the focus session directly
+            focusBlockingService.checkForEndSessionRequest()
         default:
             break
         }

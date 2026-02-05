@@ -224,7 +224,7 @@ struct FocusOnboardingView: View {
                     .font(.title)
                     .fontWeight(.bold)
 
-                Text("DevHours needs Screen Time access to block apps during your sessions.")
+                Text("Clockwise needs Screen Time access to block apps during your sessions.")
                     .font(.body)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)

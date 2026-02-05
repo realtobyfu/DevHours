@@ -28,18 +28,11 @@ struct PlannedTaskRow: View {
 //            .accessibilityLabel(task.isCompleted ? "Mark incomplete" : "Mark complete")
 
             VStack(alignment: .leading, spacing: 4) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(task.title.isEmpty ? "Untitled Task" : task.title)
-                        .font(.headline)
-                        .strikethrough(task.isCompleted)
-                        .foregroundStyle(task.isCompleted ? .secondary : .primary)
-                        .lineLimit(2)
-
-                    let tags = task.tags ?? []
-                    if !tags.isEmpty {
-                        TagsFlowView(tags: tags, compact: true)
-                    }
-                }
+                Text(task.title.isEmpty ? "Untitled Task" : task.title)
+                    .font(.headline)
+                    .strikethrough(task.isCompleted)
+                    .foregroundStyle(task.isCompleted ? .secondary : .primary)
+                    .lineLimit(2)
 
                 HStack(spacing: 8) {
                     // Duration estimate
@@ -67,6 +60,11 @@ struct PlannedTaskRow: View {
             }
 
             Spacer()
+
+            let tags = task.tags ?? []
+            if !tags.isEmpty {
+                TagsFlowView(tags: tags, compact: true)
+            }
 
             // Chevron to indicate tappable
             Image(systemName: "chevron.right")

@@ -95,11 +95,6 @@ final class PremiumManager {
         isPremium
     }
 
-    /// Check if user can select all strictness levels
-    func canUseAllStrictnessLevels() -> Bool {
-        isPremium
-    }
-
     /// Check if user can see streaks
     func canSeeStreaks() -> Bool {
         isPremium
@@ -135,19 +130,16 @@ final class PremiumManager {
     // MARK: - Purchase Methods
 
     /// Purchase lifetime premium
-    @MainActor
     func purchaseLifetime() async -> Bool {
         await storeKitManager.purchaseLifetime()
     }
 
     /// Restore previous purchases
-    @MainActor
     func restorePurchases() async {
         await storeKitManager.restorePurchases()
     }
 
     /// Check purchase status on app launch
-    @MainActor
     func checkSubscriptionStatus() async {
         await storeKitManager.checkEntitlements()
     }
@@ -178,7 +170,6 @@ enum PremiumFeature: String, CaseIterable {
     case focusStats = "Focus Statistics"
     case streaksAndAchievements = "Streaks & Achievements"
     case customMessages = "Custom Shield Messages"
-    case allStrictnessLevels = "All Strictness Levels"
     case scheduledFocus = "Scheduled Focus Times"
 
     var description: String {
@@ -193,8 +184,6 @@ enum PremiumFeature: String, CaseIterable {
             return "Track your consistency and unlock achievements"
         case .customMessages:
             return "Write your own shield screen messages"
-        case .allStrictnessLevels:
-            return "Choose how hard it is to unlock blocked apps"
         case .scheduledFocus:
             return "Automatically enable focus at scheduled times"
         }
@@ -207,7 +196,6 @@ enum PremiumFeature: String, CaseIterable {
         case .focusStats: return "chart.bar.fill"
         case .streaksAndAchievements: return "flame.fill"
         case .customMessages: return "text.bubble.fill"
-        case .allStrictnessLevels: return "lock.shield.fill"
         case .scheduledFocus: return "calendar.badge.clock"
         }
     }
